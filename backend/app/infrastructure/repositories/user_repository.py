@@ -14,9 +14,22 @@ from app.infrastructure.models.user_info import UserInfoModel
 
 class SQLAlchemyUserRepository(UserRepository):
     def __init__(self, db: Session):
+        """SQLAlchemyUserRepositoryを初期化する。
+
+        Args:
+            db: SQLAlchemyデータベースセッション。
+        """
         self.db = db
 
     def find_by_id(self, user_id: UserId) -> Optional[User]:
+        """IDでユーザーを検索する。
+
+        Args:
+            user_id: ユーザーの一意識別子。
+
+        Returns:
+            見つかった場合はUserエンティティ、見つからない場合はNone。
+        """
         user = (
             self.db.query(UserModel)
             .filter(
@@ -39,6 +52,14 @@ class SQLAlchemyUserRepository(UserRepository):
         return self._to_entity(user, user_info)
 
     def find_by_email(self, email: Email) -> Optional[User]:
+        """メールアドレスでユーザーを検索する。
+
+        Args:
+            email: ユーザーのメールアドレス。
+
+        Returns:
+            見つかった場合はUserエンティティ、見つからない場合はNone。
+        """
         user = (
             self.db.query(UserModel)
             .filter(
@@ -67,6 +88,17 @@ class SQLAlchemyUserRepository(UserRepository):
         order_by: Optional[str] = None,
         asc: bool = True,
     ) -> List[User]:
+        """削除されていないすべてのユーザーをページング付きでソートして検索する。
+
+        Args:
+            limit: 返すユーザーの最大数。
+            offset: スキップするユーザーの数。
+            order_by: ソートするカラム名。
+            asc: Trueの場合は昇順、Falseの場合は降順でソート。
+
+        Returns:
+            Userエンティティのリスト。
+        """
         query = self.db.query(UserModel).filter(UserModel.delete_flag == False)  # noqa: E712
         if order_by:
             column = getattr(UserModel, order_by, None)
@@ -92,6 +124,20 @@ class SQLAlchemyUserRepository(UserRepository):
         return result
 
     def save(self, user: User) -> User:
+        """ユーザーを保存または更新する。
+
+        ユーザーが存在しない場合は新しいユーザーレコードを作成し、
+        存在する場合は既存のユーザーレコードを更新する。
+
+        Args:
+            user: 保存するUserエンティティ。
+
+        Returns:
+            保存されたUserエンティティ。
+
+        Raises:
+            Exception: データベース操作が失敗した場合。
+        """
         try:
             db_user = (
                 self.db.query(UserModel)
@@ -193,6 +239,14 @@ class SQLAlchemyUserRepository(UserRepository):
             raise e
 
     def delete(self, user_id: UserId) -> None:
+        """ユーザーを削除済みとしてマークする。
+
+        Args:
+            user_id: 削除するユーザーの一意識別子。
+
+        Raises:
+            Exception: データベース操作が失敗した場合。
+        """
         try:
             db_user = (
                 self.db.query(UserModel)
@@ -218,6 +272,15 @@ class SQLAlchemyUserRepository(UserRepository):
     def _to_entity(
         self, model: UserModel, info_model: Optional[UserInfoModel] = None
     ) -> User:
+        """データベースモデルをUserエンティティに変換する。
+
+        Args:
+            model: ユーザーデータベースモデル。
+            info_model: 利用可能な場合、ユーザー情報データベースモデル。
+
+        Returns:
+            提供されたモデルからのデータを持つUserエンティティ。
+        """
         first_name = None
         first_name_ruby = None
         last_name = None

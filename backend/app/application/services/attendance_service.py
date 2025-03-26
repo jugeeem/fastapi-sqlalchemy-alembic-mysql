@@ -94,12 +94,12 @@ class AttendanceService:
         existing_attendance = (
             self.attendance_repository.find_by_user_id_and_date(
                 user_id_vo,
-                data.work_date,  # dateからwork_dateに変更
+                data.work_date,
             )
         )
         if existing_attendance:
             raise ValueError(
-                f"Attendance record for user {data.user_id} on {data.work_date} already exists"  # 変更
+                f"Attendance record for user {data.user_id} on {data.work_date} already exists"
             )
 
         # 打刻時間の検証
@@ -109,7 +109,7 @@ class AttendanceService:
 
         attendance = Attendance(
             id=AttendanceId.generate(),
-            work_date=data.work_date,  # 変更
+            work_date=data.work_date,
             clock_in=data.clock_in,
             clock_out=data.clock_out,
             rest_in=data.rest_in,
@@ -198,7 +198,7 @@ class AttendanceService:
         """エンティティからDTOへの変換"""
         return AttendanceResponseDTO(
             id=str(attendance.id),
-            work_date=attendance.work_date,  # 変更
+            work_date=attendance.work_date,
             clock_in=attendance.clock_in,
             clock_out=attendance.clock_out,
             rest_in=attendance.rest_in,

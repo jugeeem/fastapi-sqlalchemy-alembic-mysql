@@ -1,20 +1,29 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time
+from enum import Enum
 from typing import Optional
 
 from app.domain.value_objects.attendance_id import AttendanceId
 from app.domain.value_objects.user_id import UserId
 
 
+class AttendanceStatus(Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELED = "CANCELED"
+
+
 @dataclass(frozen=True)
 class Attendance:
     id: AttendanceId
-    work_date: date  # dateからwork_dateに変更
+    work_date: date
     clock_in: time
     clock_out: time
     rest_in: time
     rest_out: time
     user_id: UserId
+    status: AttendanceStatus
     remarks: Optional[str]
     work_place: Optional[str]
     transportation_expenses: Optional[int]
@@ -55,27 +64,27 @@ class Attendance:
 
     def update(
         self,
-        work_date: Optional[date] = None,  # dateからwork_dateに変更
+        work_date: Optional[date] = None,
         clock_in: Optional[time] = None,
         clock_out: Optional[time] = None,
         rest_in: Optional[time] = None,
         rest_out: Optional[time] = None,
         work_place: Optional[str] = None,
         transportation_expenses: Optional[int] = None,
+        status: Optional[AttendanceStatus] = None,
         remarks: Optional[str] = None,
         updated_by: str = "",
     ) -> "Attendance":
         """勤怠情報を更新した新しいインスタンスを返す"""
         return Attendance(
             id=self.id,
-            work_date=work_date
-            if work_date is not None
-            else self.work_date,  # 変更
+            work_date=work_date if work_date is not None else self.work_date,
             clock_in=clock_in if clock_in is not None else self.clock_in,
             clock_out=clock_out if clock_out is not None else self.clock_out,
             rest_in=rest_in if rest_in is not None else self.rest_in,
             rest_out=rest_out if rest_out is not None else self.rest_out,
             user_id=self.user_id,
+            status=status if status is not None else self.status,
             work_place=work_place
             if work_place is not None
             else self.work_place,
@@ -97,12 +106,13 @@ class Attendance:
 
         return Attendance(
             id=self.id,
-            work_date=self.work_date,  # 変更
+            work_date=self.work_date,
             clock_in=self.clock_in,
             clock_out=self.clock_out,
             rest_in=self.rest_in,
             rest_out=self.rest_out,
             user_id=self.user_id,
+            status=self.status,
             work_place=self.work_place,
             transportation_expenses=self.transportation_expenses,
             remarks=self.remarks,
@@ -120,12 +130,13 @@ class Attendance:
 
         return Attendance(
             id=self.id,
-            work_date=self.work_date,  # 変更
+            work_date=self.work_date,
             clock_in=self.clock_in,
             clock_out=self.clock_out,
             rest_in=self.rest_in,
             rest_out=self.rest_out,
             user_id=self.user_id,
+            status=self.status,
             work_place=self.work_place,
             transportation_expenses=self.transportation_expenses,
             remarks=self.remarks,

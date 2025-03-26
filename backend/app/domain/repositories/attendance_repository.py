@@ -17,7 +17,7 @@ class AttendanceRepository(ABC):
     def find_by_user_id_and_date(
         self,
         user_id: UserId,
-        work_date: date,  # dateからwork_dateに変更
+        work_date: date,
     ) -> Optional[Attendance]:
         """ユーザーIDと日付で勤怠情報を検索"""
         pass
