@@ -1,8 +1,9 @@
-import os
-import yaml
 import datetime
 import logging
-from typing import Dict, Any
+import os
+from typing import Any, Dict
+
+import yaml
 
 
 class YAMLLogger:

@@ -1,9 +1,8 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
 from app.config import settings
 from app.infrastructure.database import Base
 
@@ -20,6 +19,9 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # import all models here to register them with Base.metadata
 from app.infrastructure.models.user import UserModel  # noqa
+from app.infrastructure.models.user_info import UserInfoModel  # noqa
+from app.infrastructure.models.role import RoleModel  # noqa
+from app.infrastructure.models.user_role import UserRoleModel  # noqa
 
 target_metadata = Base.metadata
 
@@ -65,7 +67,9 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()

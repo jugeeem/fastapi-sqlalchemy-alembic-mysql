@@ -11,7 +11,9 @@ class UserId:
         object.__setattr__(
             self,
             "value",
-            self.value if isinstance(self.value, uuid.UUID) else uuid.UUID(self.value),
+            self.value
+            if isinstance(self.value, uuid.UUID)
+            else uuid.UUID(self.value),
         )
 
     @classmethod

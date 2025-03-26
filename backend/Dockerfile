@@ -39,8 +39,6 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.t
 
 COPY . . 
 
-COPY healthcheck.py /app/healthcheck.py
-
 RUN mkdir -p /app/migrations/versions && \
     chmod -R 777 /app/migrations && \
     chown -R appuser:appuser /app/migrations

@@ -1,11 +1,15 @@
 from datetime import datetime
 from typing import List, Optional
 
+from app.application.dtos.user_dto import (
+    UserCreateDTO,
+    UserResponseDTO,
+    UserUpdateDTO,
+)
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
 from app.domain.value_objects.email import Email
 from app.domain.value_objects.user_id import UserId
-from app.application.dtos.user_dto import UserCreateDTO, UserUpdateDTO, UserResponseDTO
 
 
 class UserService:
@@ -15,8 +19,8 @@ class UserService:
     def get_user(self, user_id: str) -> Optional[UserResponseDTO]:
         try:
             user_id_vo = UserId(user_id)
-        except ValueError:
-            raise ValueError(f"Invalid user ID: {user_id}")
+        except ValueError as err:
+            raise ValueError(f"Invalid user ID: {user_id}") from err
 
         user = self.user_repository.find_by_id(user_id_vo)
         if not user:
@@ -25,22 +29,52 @@ class UserService:
         return UserResponseDTO(
             id=str(user.id),
             email=str(user.email),
-            name=user.name,
-            is_active=user.is_active,
+            username=user.username,
+            manager_id=user.manager_id,
+            remarks=user.remarks,
+            delete_flag=user.delete_flag,
             created_at=user.created_at,
+            created_by=user.created_by,
             updated_at=user.updated_at,
+            updated_by=user.updated_by,
+            first_name=user.first_name,
+            first_name_ruby=user.first_name_ruby,
+            last_name=user.last_name,
+            last_name_ruby=user.last_name_ruby,
+            phone_number=user.phone_number,
+            zip_code=user.zip_code,
+            address=user.address,
         )
 
-    def get_users(self) -> List[UserResponseDTO]:
-        users = self.user_repository.find_all()
+    def get_users(
+        self,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        order_by: Optional[str] = None,
+        asc: bool = True,
+    ) -> List[UserResponseDTO]:
+        users = self.user_repository.find_all(
+            limit=limit, offset=offset, order_by=order_by, asc=asc
+        )
         return [
             UserResponseDTO(
                 id=str(user.id),
                 email=str(user.email),
-                name=user.name,
-                is_active=user.is_active,
+                username=user.username,
+                manager_id=user.manager_id,
+                remarks=user.remarks,
+                delete_flag=user.delete_flag,
                 created_at=user.created_at,
+                created_by=user.created_by,
                 updated_at=user.updated_at,
+                updated_by=user.updated_by,
+                first_name=user.first_name,
+                first_name_ruby=user.first_name_ruby,
+                last_name=user.last_name,
+                last_name_ruby=user.last_name_ruby,
+                phone_number=user.phone_number,
+                zip_code=user.zip_code,
+                address=user.address,
             )
             for user in users
         ]
@@ -49,7 +83,7 @@ class UserService:
         try:
             email = Email(data.email)
         except ValueError as e:
-            raise ValueError(f"Invalid email: {str(e)}")
+            raise ValueError(f"Invalid email: {str(e)}") from e
 
         existing_user = self.user_repository.find_by_email(email)
         if existing_user:
@@ -58,9 +92,22 @@ class UserService:
         user = User(
             id=UserId.generate(),
             email=email,
-            name=data.name,
-            is_active=True,
+            username=data.username,
+            password=data.password,
+            manager_id=data.manager_id,
+            remarks=data.remarks,
+            delete_flag=False,
             created_at=datetime.now(),
+            created_by=data.created_by,
+            updated_at=datetime.now(),
+            updated_by=data.updated_by,
+            first_name=data.first_name,
+            first_name_ruby=data.first_name_ruby,
+            last_name=data.last_name,
+            last_name_ruby=data.last_name_ruby,
+            phone_number=data.phone_number,
+            zip_code=data.zip_code,
+            address=data.address,
         )
 
         created_user = self.user_repository.save(user)
@@ -68,10 +115,21 @@ class UserService:
         return UserResponseDTO(
             id=str(created_user.id),
             email=str(created_user.email),
-            name=created_user.name,
-            is_active=created_user.is_active,
+            username=created_user.username,
+            manager_id=created_user.manager_id,
+            remarks=created_user.remarks,
+            delete_flag=created_user.delete_flag,
             created_at=created_user.created_at,
+            created_by=created_user.created_by,
             updated_at=created_user.updated_at,
+            updated_by=created_user.updated_by,
+            first_name=created_user.first_name,
+            first_name_ruby=created_user.first_name_ruby,
+            last_name=created_user.last_name,
+            last_name_ruby=created_user.last_name_ruby,
+            phone_number=created_user.phone_number,
+            zip_code=created_user.zip_code,
+            address=created_user.address,
         )
 
     def update_user(
@@ -79,38 +137,90 @@ class UserService:
     ) -> Optional[UserResponseDTO]:
         try:
             user_id_vo = UserId(user_id)
-        except ValueError:
-            raise ValueError(f"Invalid user ID: {user_id}")
+        except ValueError as err:
+            raise ValueError(f"Invalid user ID: {user_id}") from err
 
         user = self.user_repository.find_by_id(user_id_vo)
         if not user:
             return None
 
-        if data.name:
-            user = user.update_name(data.name)
+        updated_user = user
 
-        if data.is_active is not None:
-            if data.is_active:
-                user = user.activate()
+        if data.username:
+            updated_user = updated_user.update_username(data.username)
+
+        if data.delete_flag is not None:
+            if not data.delete_flag:
+                updated_user = updated_user.activate()
             else:
-                user = user.deactivate()
+                updated_user = updated_user.deactivate()
 
-        updated_user = self.user_repository.save(user)
+        updated_user = User(
+            id=updated_user.id,
+            email=updated_user.email,
+            username=updated_user.username,
+            password=data.password if data.password else updated_user.password,
+            manager_id=data.manager_id
+            if data.manager_id
+            else updated_user.manager_id,
+            remarks=data.remarks
+            if data.remarks is not None
+            else updated_user.remarks,
+            delete_flag=updated_user.delete_flag,
+            created_at=updated_user.created_at,
+            created_by=updated_user.created_by,
+            updated_at=datetime.now(),
+            updated_by=data.updated_by,
+            first_name=data.first_name
+            if data.first_name is not None
+            else updated_user.first_name,
+            first_name_ruby=data.first_name_ruby
+            if data.first_name_ruby is not None
+            else updated_user.first_name_ruby,
+            last_name=data.last_name
+            if data.last_name is not None
+            else updated_user.last_name,
+            last_name_ruby=data.last_name_ruby
+            if data.last_name_ruby is not None
+            else updated_user.last_name_ruby,
+            phone_number=data.phone_number
+            if data.phone_number is not None
+            else updated_user.phone_number,
+            zip_code=data.zip_code
+            if data.zip_code is not None
+            else updated_user.zip_code,
+            address=data.address
+            if data.address is not None
+            else updated_user.address,
+        )
+
+        saved_user = self.user_repository.save(updated_user)
 
         return UserResponseDTO(
-            id=str(updated_user.id),
-            email=str(updated_user.email),
-            name=updated_user.name,
-            is_active=updated_user.is_active,
-            created_at=updated_user.created_at,
-            updated_at=updated_user.updated_at,
+            id=str(saved_user.id),
+            email=str(saved_user.email),
+            username=saved_user.username,
+            manager_id=saved_user.manager_id,
+            remarks=saved_user.remarks,
+            delete_flag=saved_user.delete_flag,
+            created_at=saved_user.created_at,
+            created_by=saved_user.created_by,
+            updated_at=saved_user.updated_at,
+            updated_by=saved_user.updated_by,
+            first_name=saved_user.first_name,
+            first_name_ruby=saved_user.first_name_ruby,
+            last_name=saved_user.last_name,
+            last_name_ruby=saved_user.last_name_ruby,
+            phone_number=saved_user.phone_number,
+            zip_code=saved_user.zip_code,
+            address=saved_user.address,
         )
 
     def delete_user(self, user_id: str) -> bool:
         try:
             user_id_vo = UserId(user_id)
-        except ValueError:
-            raise ValueError(f"Invalid user ID: {user_id}")
+        except ValueError as err:
+            raise ValueError(f"Invalid user ID: {user_id}") from err
 
         user = self.user_repository.find_by_id(user_id_vo)
         if not user:

@@ -1,13 +1,21 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import ProgrammingError, OperationalError
 
-from app.application.dtos.user_dto import UserCreateDTO, UserUpdateDTO, UserResponseDTO
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.orm import Session
+
+from app.application.dtos.user_dto import (
+    UserCreateDTO,
+    UserQueryDTO,
+    UserResponseDTO,
+    UserUpdateDTO,
+)
 from app.application.services.user_service import UserService
 from app.domain.repositories.user_repository import UserRepository
 from app.infrastructure.database import get_db
-from app.infrastructure.repositories.user_repository import SQLAlchemyUserRepository
+from app.infrastructure.repositories.user_repository import (
+    SQLAlchemyUserRepository,
+)
 
 router = APIRouter()
 
@@ -24,12 +32,20 @@ def get_user_service(
 
 @router.get("", response_model=List[UserResponseDTO])
 def read_users(
+    query: UserQueryDTO = Depends(),
     service: UserService = Depends(get_user_service),
 ):
-    return service.get_users()
+    return service.get_users(
+        limit=query.limit,
+        offset=query.offset,
+        order_by=query.order_by,
+        asc=query.asc,
+    )
 
 
-@router.post("", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED
+)
 def create_user(
     user_create: UserCreateDTO,
     service: UserService = Depends(get_user_service),
@@ -37,17 +53,19 @@ def create_user(
     try:
         return service.create_user(user_create)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
     except (ProgrammingError, OperationalError) as e:
         if "Table" in str(e) and "doesn't exist" in str(e):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="データベーステーブルが存在しません。マイグレーションを実行してください: `alembic upgrade head`",
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"データベースエラー: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/{user_id}", response_model=UserResponseDTO)
@@ -64,7 +82,9 @@ def read_user(
             )
         return user
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
 
 
 @router.put("/{user_id}", response_model=UserResponseDTO)
@@ -82,12 +102,15 @@ def update_user(
             )
         return user
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: str,
+    updated_by: str = Body(..., embed=True),
     service: UserService = Depends(get_user_service),
 ):
     try:
@@ -97,4 +120,6 @@ def delete_user(
                 detail=f"User with ID {user_id} not found",
             )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e

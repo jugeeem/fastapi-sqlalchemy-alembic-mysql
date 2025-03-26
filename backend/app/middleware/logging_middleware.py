@@ -1,8 +1,10 @@
+import datetime
 import time
 import uuid
-import datetime
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from ..utils.logger import YAMLLogger
 
 

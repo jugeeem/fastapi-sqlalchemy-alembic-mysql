@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .middleware import AccessLoggingMiddleware
 
 from app.config import settings
 from app.interfaces.api.v1.api import api_router
-from app.infrastructure.database import init_db
+
+from app.middleware import AccessLoggingMiddleware
 
 app = FastAPI(
     title="FastAPI Application",
@@ -13,7 +13,6 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# CORSミドルウェアの設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,16 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ミドルウェアを追加
 app.add_middleware(AccessLoggingMiddleware)
 
-# APIルーターの登録
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-
-@app.on_event("startup")
-async def startup_event():
-    init_db()
 
 
 @app.get("/")

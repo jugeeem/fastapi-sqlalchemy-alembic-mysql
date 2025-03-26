@@ -16,7 +16,13 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    def find_all(self) -> List[User]:
+    def find_all(
+        self,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        order_by: Optional[str] = None,
+        asc: bool = True,
+    ) -> List[User]:
         pass
 
     @abstractmethod
