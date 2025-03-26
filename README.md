@@ -58,8 +58,16 @@ APIドキュメント: `http://localhost:8000/docs`
 
 ## APIエンドポイント
 
+### ユーザーAPI
 - `GET /api/v1/users` - すべてのユーザーを取得
 - `POST /api/v1/users` - 新しいユーザーを作成
 - `GET /api/v1/users/{user_id}` - 特定のユーザーを取得
 - `PUT /api/v1/users/{user_id}` - ユーザー情報を更新
 - `DELETE /api/v1/users/{user_id}` - ユーザーを削除
+
+### 勤怠情報API
+- `GET /api/v1/attendances` - 勤怠情報を取得 (クエリパラメータで絞り込み可能)
+- `POST /api/v1/attendances` - 新しい勤怠情報を作成
+- `GET /api/v1/attendances/{attendance_id}` - 特定の勤怠情報を取得
+- `PUT /api/v1/attendances/{attendance_id}` - 勤怠情報を更新
+- `DELETE /api/v1/attendances/{attendance_id}` - 勤怠情報を削除

@@ -22,6 +22,7 @@ from app.infrastructure.models.user import UserModel  # noqa
 from app.infrastructure.models.user_info import UserInfoModel  # noqa
 from app.infrastructure.models.role import RoleModel  # noqa
 from app.infrastructure.models.user_role import UserRoleModel  # noqa
+from app.infrastructure.models.attendance import AttendanceModel  # noqa
 
 target_metadata = Base.metadata
 
