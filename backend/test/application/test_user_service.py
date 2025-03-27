@@ -13,7 +13,7 @@ from app.domain.value_objects.user_id import UserId
 class TestUserService:
     def test_get_user(self, mock_user_repository, sample_user):
         # リポジトリにユーザーを追加
-        mock_user_repository.save(sample_user)
+        mock_user_repository.create(sample_user)
         service = UserService(mock_user_repository)
 
         # ユーザーの取得をテスト
@@ -30,7 +30,7 @@ class TestUserService:
 
     def test_get_users(self, mock_user_repository, sample_user):
         # 複数ユーザーをリポジトリに追加
-        mock_user_repository.save(sample_user)
+        mock_user_repository.create(sample_user)
 
         another_user = User(
             id=UserId.generate(),
@@ -52,7 +52,7 @@ class TestUserService:
             zip_code="987-6543",
             address="Osaka, Japan",
         )
-        mock_user_repository.save(another_user)
+        mock_user_repository.create(another_user)
 
         service = UserService(mock_user_repository)
 
@@ -102,7 +102,7 @@ class TestUserService:
         self, mock_user_repository, sample_user
     ):
         # 既存ユーザーの保存
-        mock_user_repository.save(sample_user)
+        mock_user_repository.create(sample_user)
         service = UserService(mock_user_repository)
 
         # 同じメールアドレスで新しいユーザーを作成しようとする
@@ -124,7 +124,7 @@ class TestUserService:
 
     def test_update_user(self, mock_user_repository, sample_user):
         # ユーザーの保存
-        mock_user_repository.save(sample_user)
+        mock_user_repository.create(sample_user)
         service = UserService(mock_user_repository)
 
         # 更新データ
@@ -156,7 +156,7 @@ class TestUserService:
 
     def test_delete_user(self, mock_user_repository, sample_user):
         # ユーザーの保存
-        mock_user_repository.save(sample_user)
+        mock_user_repository.create(sample_user)
         service = UserService(mock_user_repository)
 
         # ユーザーの削除

@@ -195,3 +195,96 @@ def delete_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
+
+
+@router.post("/{user_id}/promote-to-manager", response_model=UserResponseDTO)
+def promote_user_to_manager(
+    user_id: str,
+    service: UserService = Depends(get_user_service),
+):
+    """指定されたIDのユーザーの権限を'user'から'manager'に昇格させる。
+
+    Args:
+        user_id: 昇格させるユーザーの一意識別子。
+        service: ユーザーサービスのインスタンス。
+
+    Returns:
+        昇格されたユーザー情報。
+
+    Raises:
+        HTTPException: ユーザーが見つからない場合や入力が無効な場合。
+    """
+    try:
+        user = service.promote_user_to_manager(user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found",
+            )
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.post("/{user_id}/promote-to-admin", response_model=UserResponseDTO)
+def promote_user_to_admin(
+    user_id: str,
+    service: UserService = Depends(get_user_service),
+):
+    """指定されたIDのユーザーの権限を'manager'から'admin'に昇格させる。
+
+    Args:
+        user_id: 昇格させるユーザーの一意識別子。
+        service: ユーザーサービスのインスタンス。
+
+    Returns:
+        昇格されたユーザー情報。
+
+    Raises:
+        HTTPException: ユーザーが見つからない場合や入力が無効な場合、または現在の役割が'manager'でない場合。
+    """
+    try:
+        user = service.promote_user_to_admin(user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found or is not currently a manager",
+            )
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.post("/{user_id}/demote-from-admin-to-manager", response_model=UserResponseDTO)
+def demote_user_from_admin_to_manager(
+    user_id: str,
+    service: UserService = Depends(get_user_service),
+):
+    """指定されたIDのユーザーの権限を'admin'から'manager'に降格させる。
+
+    Args:
+        user_id: 降格させるユーザーの一意識別子。
+        service: ユーザーサービスのインスタンス。
+
+    Returns:
+        降格されたユーザー情報。
+
+    Raises:
+        HTTPException: ユーザーが見つからない場合や入力が無効な場合、または現在の役割が'admin'でない場合。
+    """
+    try:
+        user = service.demote_user_from_admin_to_manager(user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found or is not currently an admin",
+            )
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e

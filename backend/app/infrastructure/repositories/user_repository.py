@@ -123,17 +123,78 @@ class SQLAlchemyUserRepository(UserRepository):
 
         return result
 
-    def save(self, user: User) -> User:
-        """ユーザーを保存または更新する。
-
-        ユーザーが存在しない場合は新しいユーザーレコードを作成し、
-        存在する場合は既存のユーザーレコードを更新する。
+    def create(self, user: User) -> User:
+        """新しいユーザーを作成する。
 
         Args:
-            user: 保存するUserエンティティ。
+            user: 作成するUserエンティティ。
 
         Returns:
-            保存されたUserエンティティ。
+            作成されたUserエンティティ。
+
+        Raises:
+            Exception: データベース操作が失敗した場合。
+        """
+        try:
+            # 既存のユーザーがないか確認
+            existing_user = (
+                self.db.query(UserModel)
+                .filter(UserModel.id == str(user.id))
+                .first()
+            )
+            if existing_user:
+                raise ValueError(f"User with ID {user.id} already exists")
+
+            # ユーザーモデルを作成
+            db_user = UserModel(
+                id=str(user.id),
+                email=str(user.email),
+                username=user.username,
+                password=user.password,
+                manager_id=user.manager_id,
+                remarks=user.remarks,
+                delete_flag=user.delete_flag,
+                created_at=user.created_at,
+                created_by=user.created_by,
+                updated_at=user.updated_at,
+                updated_by=user.updated_by,
+            )
+            self.db.add(db_user)
+
+            # ユーザー情報モデルを作成
+            db_user_info = UserInfoModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user.id),
+                first_name=user.first_name,
+                first_name_ruby=user.first_name_ruby,
+                last_name=user.last_name,
+                last_name_ruby=user.last_name_ruby,
+                phone_number=user.phone_number,
+                zip_code=user.zip_code,
+                address=user.address,
+                delete_flag=False,
+                created_at=user.created_at,
+                created_by=user.created_by,
+                updated_at=user.updated_at,
+                updated_by=user.updated_by,
+            )
+            self.db.add(db_user_info)
+            self.db.commit()
+            self.db.refresh(db_user)
+
+            return self._to_entity(db_user, db_user_info)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def update(self, user: User) -> User:
+        """既存のユーザーを更新する。
+
+        Args:
+            user: 更新するUserエンティティ。
+
+        Returns:
+            更新されたUserエンティティ。
 
         Raises:
             Exception: データベース操作が失敗した場合。
@@ -145,20 +206,29 @@ class SQLAlchemyUserRepository(UserRepository):
                 .first()
             )
             if not db_user:
-                db_user = UserModel(
-                    id=str(user.id),
-                    email=str(user.email),
-                    username=user.username,
-                    password=user.password,
-                    manager_id=user.manager_id,
-                    remarks=user.remarks,
-                    delete_flag=user.delete_flag,
-                    created_at=user.created_at,
-                    created_by=user.created_by,
-                    updated_at=user.updated_at,
-                    updated_by=user.updated_by,
+                raise ValueError(f"User with ID {user.id} not found")
+
+            # ユーザーモデルを更新
+            db_user.email = str(user.email)
+            db_user.username = user.username
+            db_user.password = user.password
+            db_user.manager_id = user.manager_id
+            db_user.remarks = user.remarks
+            db_user.delete_flag = user.delete_flag
+            db_user.updated_at = datetime.now()
+            db_user.updated_by = user.updated_by
+
+            # ユーザー情報モデルを取得または作成
+            db_user_info = (
+                self.db.query(UserInfoModel)
+                .filter(
+                    UserInfoModel.user_id == str(user.id),
+                    UserInfoModel.delete_flag == False,  # noqa: E712
                 )
-                self.db.add(db_user)
+                .first()
+            )
+
+            if not db_user_info:
                 db_user_info = UserInfoModel(
                     id=str(uuid.uuid4()),
                     user_id=str(user.id),
@@ -177,61 +247,18 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 self.db.add(db_user_info)
             else:
-                db_user.email = str(user.email)
-                db_user.username = user.username
-                db_user.password = user.password
-                db_user.manager_id = user.manager_id
-                db_user.remarks = user.remarks
-                db_user.delete_flag = user.delete_flag
-                db_user.updated_at = datetime.now()
-                db_user.updated_by = user.updated_by
-                db_user_info = (
-                    self.db.query(UserInfoModel)
-                    .filter(
-                        UserInfoModel.user_id == str(user.id),
-                        UserInfoModel.delete_flag == False,  # noqa: E712
-                    )
-                    .first()
-                )
+                db_user_info.first_name = user.first_name
+                db_user_info.first_name_ruby = user.first_name_ruby
+                db_user_info.last_name = user.last_name
+                db_user_info.last_name_ruby = user.last_name_ruby
+                db_user_info.phone_number = user.phone_number
+                db_user_info.zip_code = user.zip_code
+                db_user_info.address = user.address
+                db_user_info.updated_at = datetime.now()
+                db_user_info.updated_by = user.updated_by
 
-                if not db_user_info:
-                    db_user_info = UserInfoModel(
-                        id=str(uuid.uuid4()),
-                        user_id=str(user.id),
-                        first_name=user.first_name,
-                        first_name_ruby=user.first_name_ruby,
-                        last_name=user.last_name,
-                        last_name_ruby=user.last_name_ruby,
-                        phone_number=user.phone_number,
-                        zip_code=user.zip_code,
-                        address=user.address,
-                        delete_flag=False,
-                        created_at=user.created_at,
-                        created_by=user.created_by,
-                        updated_at=user.updated_at,
-                        updated_by=user.updated_by,
-                    )
-                    self.db.add(db_user_info)
-                else:
-                    db_user_info.first_name = user.first_name
-                    db_user_info.first_name_ruby = user.first_name_ruby
-                    db_user_info.last_name = user.last_name
-                    db_user_info.last_name_ruby = user.last_name_ruby
-                    db_user_info.phone_number = user.phone_number
-                    db_user_info.zip_code = user.zip_code
-                    db_user_info.address = user.address
-                    db_user_info.updated_at = datetime.now()
-                    db_user_info.updated_by = user.updated_by
             self.db.commit()
             self.db.refresh(db_user)
-            db_user_info = (
-                self.db.query(UserInfoModel)
-                .filter(
-                    UserInfoModel.user_id == str(user.id),
-                    UserInfoModel.delete_flag == False,  # noqa: E712
-                )
-                .first()
-            )
 
             return self._to_entity(db_user, db_user_info)
         except Exception as e:
@@ -265,6 +292,131 @@ class SQLAlchemyUserRepository(UserRepository):
                     db_user_info.delete_flag = True
                     db_user_info.updated_at = datetime.now()
                 self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def promote_to_manager(self, user_id: UserId) -> Optional[User]:
+        """ユーザーの権限を'user'から'manager'に昇格させる。
+
+        Args:
+            user_id: 昇格させるユーザーの一意識別子。
+
+        Returns:
+            昇格させたユーザー。見つからない場合はNone。
+        """
+        try:
+            db_user = (
+                self.db.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == False,  # noqa: E712
+                )
+                .first()
+            )
+            if not db_user:
+                return None
+
+            # 'manager'権限へ昇格させる
+            db_user.manager_id = "manager"  # 権限をmanagerに設定
+            db_user.updated_at = datetime.now()
+            self.db.commit()
+            self.db.refresh(db_user)
+
+            user_info = (
+                self.db.query(UserInfoModel)
+                .filter(
+                    UserInfoModel.user_id == str(user_id),
+                    UserInfoModel.delete_flag == False,  # noqa: E712
+                )
+                .first()
+            )
+
+            return self._to_entity(db_user, user_info)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def promote_to_admin(self, user_id: UserId) -> Optional[User]:
+        """ユーザーの権限を'manager'から'admin'に昇格させる。
+
+        Args:
+            user_id: 昇格させるユーザーの一意識別子。
+
+        Returns:
+            昇格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
+        """
+        try:
+            db_user = (
+                self.db.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == False,  # noqa: E712
+                    UserModel.manager_id == "manager",  # 現在managerであること確認
+                )
+                .first()
+            )
+            if not db_user:
+                return None
+
+            # 'admin'権限へ昇格させる
+            db_user.manager_id = "admin"  # 権限をadminに設定
+            db_user.updated_at = datetime.now()
+            self.db.commit()
+            self.db.refresh(db_user)
+
+            user_info = (
+                self.db.query(UserInfoModel)
+                .filter(
+                    UserInfoModel.user_id == str(user_id),
+                    UserInfoModel.delete_flag == False,  # noqa: E712
+                )
+                .first()
+            )
+
+            return self._to_entity(db_user, user_info)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def demote_from_admin_to_manager(self, user_id: UserId) -> Optional[User]:
+        """ユーザーの権限を'admin'から'manager'に降格させる。
+
+        Args:
+            user_id: 降格させるユーザーの一意識別子。
+
+        Returns:
+            降格させたユーザー。見つからないか現在の役割が'admin'でない場合はNone。
+        """
+        try:
+            db_user = (
+                self.db.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == False,  # noqa: E712
+                    UserModel.manager_id == "admin",  # 現在adminであること確認
+                )
+                .first()
+            )
+            if not db_user:
+                return None
+
+            # 'manager'権限に降格させる
+            db_user.manager_id = "manager"  # 権限をmanagerに設定
+            db_user.updated_at = datetime.now()
+            self.db.commit()
+            self.db.refresh(db_user)
+
+            user_info = (
+                self.db.query(UserInfoModel)
+                .filter(
+                    UserInfoModel.user_id == str(user_id),
+                    UserInfoModel.delete_flag == False,  # noqa: E712
+                )
+                .first()
+            )
+
+            return self._to_entity(db_user, user_info)
         except Exception as e:
             self.db.rollback()
             raise e

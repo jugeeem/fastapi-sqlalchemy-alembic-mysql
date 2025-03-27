@@ -93,7 +93,40 @@ class MockUserRepository(UserRepository):
             users = users[:limit]
         return users
 
-    def save(self, user: User) -> User:
+    def create(self, user: User) -> User:
+        """新しいユーザーを作成する。
+
+        Args:
+            user: 作成するUserエンティティ。
+
+        Returns:
+            作成されたUserエンティティ。
+        """
+        # ユーザーが既に存在していないことを確認
+        if str(user.id) in self.users:
+            raise ValueError(f"User with ID {user.id} already exists")
+
+        # ユーザーを辞書に追加
+        self.users[str(user.id)] = user
+        return user
+
+    def update(self, user: User) -> User:
+        """既存のユーザーを更新する。
+
+        Args:
+            user: 更新するUserエンティティ。
+
+        Returns:
+            更新されたUserエンティティ。
+
+        Raises:
+            ValueError: ユーザーが存在しない場合。
+        """
+        # ユーザーが存在することを確認
+        if str(user.id) not in self.users:
+            raise ValueError(f"User with ID {user.id} not found")
+
+        # ユーザー情報を更新
         self.users[str(user.id)] = user
         return user
 
