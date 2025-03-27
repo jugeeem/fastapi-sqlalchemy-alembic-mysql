@@ -352,7 +352,8 @@ class SQLAlchemyUserRepository(UserRepository):
                 .filter(
                     UserModel.id == str(user_id),
                     UserModel.delete_flag == False,  # noqa: E712
-                    UserModel.manager_id == "manager",  # 現在managerであること確認
+                    UserModel.manager_id
+                    == "manager",  # 現在managerであること確認
                 )
                 .first()
             )
@@ -403,6 +404,49 @@ class SQLAlchemyUserRepository(UserRepository):
 
             # 'manager'権限に降格させる
             db_user.manager_id = "manager"  # 権限をmanagerに設定
+            db_user.updated_at = datetime.now()
+            self.db.commit()
+            self.db.refresh(db_user)
+
+            user_info = (
+                self.db.query(UserInfoModel)
+                .filter(
+                    UserInfoModel.user_id == str(user_id),
+                    UserInfoModel.delete_flag == False,  # noqa: E712
+                )
+                .first()
+            )
+
+            return self._to_entity(db_user, user_info)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def demote_from_manager_to_user(self, user_id: UserId) -> Optional[User]:
+        """ユーザーの権限を'manager'から'user'に降格させる。
+
+        Args:
+            user_id: 降格させるユーザーの一意識別子。
+
+        Returns:
+            降格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
+        """
+        try:
+            db_user = (
+                self.db.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == False,  # noqa: E712
+                    UserModel.manager_id
+                    == "manager",  # 現在managerであること確認
+                )
+                .first()
+            )
+            if not db_user:
+                return None
+
+            # 'user'権限に降格させる
+            db_user.manager_id = "user"  # 権限をuserに設定
             db_user.updated_at = datetime.now()
             self.db.commit()
             self.db.refresh(db_user)

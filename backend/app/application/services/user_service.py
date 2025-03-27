@@ -229,7 +229,9 @@ class UserService:
         self.user_repository.delete(user_id_vo)
         return True
 
-    def promote_user_to_manager(self, user_id: str) -> Optional[UserResponseDTO]:
+    def promote_user_to_manager(
+        self, user_id: str
+    ) -> Optional[UserResponseDTO]:
         """ユーザーの権限を'user'から'manager'に昇格させる。
 
         Args:
@@ -311,7 +313,9 @@ class UserService:
             address=promoted_user.address,
         )
 
-    def demote_user_from_admin_to_manager(self, user_id: str) -> Optional[UserResponseDTO]:
+    def demote_user_from_admin_to_manager(
+        self, user_id: str
+    ) -> Optional[UserResponseDTO]:
         """ユーザーの権限を'admin'から'manager'に降格させる。
 
         Args:
@@ -328,7 +332,54 @@ class UserService:
         except ValueError as err:
             raise ValueError(f"Invalid user ID: {user_id}") from err
 
-        demoted_user = self.user_repository.demote_from_admin_to_manager(user_id_vo)
+        demoted_user = self.user_repository.demote_from_admin_to_manager(
+            user_id_vo
+        )
+        if not demoted_user:
+            return None
+
+        return UserResponseDTO(
+            id=str(demoted_user.id),
+            email=str(demoted_user.email),
+            username=demoted_user.username,
+            manager_id=demoted_user.manager_id,
+            remarks=demoted_user.remarks,
+            delete_flag=demoted_user.delete_flag,
+            created_at=demoted_user.created_at,
+            created_by=demoted_user.created_by,
+            updated_at=demoted_user.updated_at,
+            updated_by=demoted_user.updated_by,
+            first_name=demoted_user.first_name,
+            first_name_ruby=demoted_user.first_name_ruby,
+            last_name=demoted_user.last_name,
+            last_name_ruby=demoted_user.last_name_ruby,
+            phone_number=demoted_user.phone_number,
+            zip_code=demoted_user.zip_code,
+            address=demoted_user.address,
+        )
+
+    def demote_user_from_manager_to_user(
+        self, user_id: str
+    ) -> Optional[UserResponseDTO]:
+        """ユーザーの権限を'manager'から'user'に降格させる。
+
+        Args:
+            user_id: 降格させるユーザーの一意識別子。
+
+        Returns:
+            降格させたユーザーの情報。見つからないか現在の役割が'manager'でない場合はNone。
+
+        Raises:
+            ValueError: ユーザーIDが無効な場合。
+        """
+        try:
+            user_id_vo = UserId(user_id)
+        except ValueError as err:
+            raise ValueError(f"Invalid user ID: {user_id}") from err
+
+        demoted_user = self.user_repository.demote_from_manager_to_user(
+            user_id_vo
+        )
         if not demoted_user:
             return None
 

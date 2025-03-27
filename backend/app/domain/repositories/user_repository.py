@@ -88,3 +88,15 @@ class UserRepository(ABC):
             降格させたユーザー。見つからないか現在の役割が'admin'でない場合はNone。
         """
         pass
+
+    @abstractmethod
+    def demote_from_manager_to_user(self, user_id: UserId) -> Optional[User]:
+        """ユーザーの権限を'manager'から'user'に降格させる。
+
+        Args:
+            user_id: 降格させるユーザーの一意識別子。
+
+        Returns:
+            降格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
+        """
+        pass
