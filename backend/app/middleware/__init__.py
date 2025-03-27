@@ -1,3 +1,3 @@
-from .logging_middleware import AccessLoggingMiddleware
+from backend.app.middleware.app_middleware import AppMiddleware
 
-__all__ = ["AccessLoggingMiddleware"]
+__all__ = ["AppMiddleware"]
