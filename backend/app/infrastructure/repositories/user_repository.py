@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.domain.entities.user import User
@@ -10,6 +11,8 @@ from app.domain.value_objects.email import Email
 from app.domain.value_objects.user_id import UserId
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_info import UserInfoModel
+from app.infrastructure.models.user_role import UserRoleModel
+from app.infrastructure.models.role import RoleModel
 
 
 class SQLAlchemyUserRepository(UserRepository):
@@ -151,7 +154,7 @@ class SQLAlchemyUserRepository(UserRepository):
                 email=str(user.email),
                 username=user.username,
                 password=user.password,
-                manager_id=user.manager_id,
+                manager_id=user.manager_id if user.manager_id else None,  # manager_idがnullを許容するように
                 remarks=user.remarks,
                 delete_flag=user.delete_flag,
                 created_at=user.created_at,
@@ -179,6 +182,32 @@ class SQLAlchemyUserRepository(UserRepository):
                 updated_by=user.updated_by,
             )
             self.db.add(db_user_info)
+            
+            # デフォルトのユーザーロールを追加
+            user_role = (
+                self.db.query(RoleModel)
+                .filter(
+                    RoleModel.role_name == RoleModel.USER_ROLE,
+                    RoleModel.delete_flag == False  # noqa: E712
+                )
+                .first()
+            )
+            
+            if not user_role:
+                raise ValueError(f"Role {RoleModel.USER_ROLE} not found")
+            
+            db_user_role = UserRoleModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user.id),
+                role_id=user_role.id,
+                delete_flag=False,
+                created_at=user.created_at,
+                created_by=user.created_by,
+                updated_at=user.updated_at,
+                updated_by=user.updated_by,
+            )
+            self.db.add(db_user_role)
+            
             self.db.commit()
             self.db.refresh(db_user)
 
@@ -198,6 +227,8 @@ class SQLAlchemyUserRepository(UserRepository):
 
         Raises:
             Exception: データベース操作が失敗した場合。
+            ValueError: manager_idに設定しようとしているユーザーが存在しない場合、
+                      またはマネージャー権限がない場合。
         """
         try:
             db_user = (
@@ -208,7 +239,30 @@ class SQLAlchemyUserRepository(UserRepository):
             if not db_user:
                 raise ValueError(f"User with ID {user.id} not found")
 
-            # ユーザーモデルを更新
+            # manager_idが変更された場合、そのユーザーが存在し、マネージャー権限を持っているか確認
+            if user.manager_id != db_user.manager_id and user.manager_id is not None:
+                try:
+                    # manager_idとして設定されるユーザーが存在するか確認
+                    manager_id_vo = UserId(user.manager_id)
+                    manager = (
+                        self.db.query(UserModel)
+                        .filter(
+                            UserModel.id == str(manager_id_vo),
+                            UserModel.delete_flag == False,  # noqa: E712
+                        )
+                        .first()
+                    )
+                    if not manager:
+                        raise ValueError(f"Manager with ID {user.manager_id} not found")
+                    
+                    # そのユーザーがマネージャー権限を持っているか確認
+                    if not self.has_manager_role(manager_id_vo):
+                        raise ValueError(
+                            f"User with ID {user.manager_id} does not have manager privileges"
+                        )
+                except ValueError as e:
+                    raise ValueError(f"Invalid manager ID: {str(e)}")
+
             db_user.email = str(user.email)
             db_user.username = user.username
             db_user.password = user.password
@@ -306,7 +360,8 @@ class SQLAlchemyUserRepository(UserRepository):
             昇格させたユーザー。見つからない場合はNone。
         """
         try:
-            db_user = (
+            # ユーザーが存在するか確認
+            user = (
                 self.db.query(UserModel)
                 .filter(
                     UserModel.id == str(user_id),
@@ -314,15 +369,62 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 .first()
             )
-            if not db_user:
+            if not user:
                 return None
-
-            # 'manager'権限へ昇格させる
-            db_user.manager_id = "manager"  # 権限をmanagerに設定
-            db_user.updated_at = datetime.now()
+            
+            # userロールを持っているかチェック
+            user_role = (
+                self.db.query(UserRoleModel, RoleModel)
+                .join(RoleModel, UserRoleModel.role_id == RoleModel.id)
+                .filter(
+                    UserRoleModel.user_id == str(user_id),
+                    UserRoleModel.delete_flag == False,  # noqa: E712
+                    RoleModel.role_name == RoleModel.USER_ROLE
+                )
+                .first()
+            )
+            
+            if not user_role:
+                return None
+                
+            # managerロールを取得
+            manager_role = (
+                self.db.query(RoleModel)
+                .filter(
+                    RoleModel.role_name == RoleModel.MANAGER_ROLE,
+                    RoleModel.delete_flag == False  # noqa: E712
+                )
+                .first()
+            )
+            
+            if not manager_role:
+                raise ValueError(f"Role {RoleModel.MANAGER_ROLE} not found")
+            
+            # userロールを削除（または非アクティブ化）
+            user_role_model = user_role[0]
+            user_role_model.delete_flag = True
+            user_role_model.updated_at = datetime.now()
+            
+            # managerロールを追加
+            new_role = UserRoleModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user_id),
+                role_id=manager_role.id,
+                delete_flag=False,
+                created_at=datetime.now(),
+                created_by=user.updated_by,
+                updated_at=datetime.now(),
+                updated_by=user.updated_by
+            )
+            self.db.add(new_role)
+            
+            # ユーザー更新時間を更新
+            user.updated_at = datetime.now()
+            
             self.db.commit()
-            self.db.refresh(db_user)
-
+            self.db.refresh(user)
+            
+            # ユーザー情報を取得して返す
             user_info = (
                 self.db.query(UserInfoModel)
                 .filter(
@@ -331,8 +433,8 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 .first()
             )
-
-            return self._to_entity(db_user, user_info)
+            
+            return self._to_entity(user, user_info)
         except Exception as e:
             self.db.rollback()
             raise e
@@ -347,25 +449,71 @@ class SQLAlchemyUserRepository(UserRepository):
             昇格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
         """
         try:
-            db_user = (
+            # ユーザーが存在するか確認
+            user = (
                 self.db.query(UserModel)
                 .filter(
                     UserModel.id == str(user_id),
                     UserModel.delete_flag == False,  # noqa: E712
-                    UserModel.manager_id
-                    == "manager",  # 現在managerであること確認
                 )
                 .first()
             )
-            if not db_user:
+            if not user:
                 return None
-
-            # 'admin'権限へ昇格させる
-            db_user.manager_id = "admin"  # 権限をadminに設定
-            db_user.updated_at = datetime.now()
+            
+            # managerロールを持っているかチェック
+            manager_role = (
+                self.db.query(UserRoleModel, RoleModel)
+                .join(RoleModel, UserRoleModel.role_id == RoleModel.id)
+                .filter(
+                    UserRoleModel.user_id == str(user_id),
+                    UserRoleModel.delete_flag == False,  # noqa: E712
+                    RoleModel.role_name == RoleModel.MANAGER_ROLE
+                )
+                .first()
+            )
+            
+            if not manager_role:
+                return None
+                
+            # adminロールを取得
+            admin_role = (
+                self.db.query(RoleModel)
+                .filter(
+                    RoleModel.role_name == RoleModel.ADMIN_ROLE,
+                    RoleModel.delete_flag == False  # noqa: E712
+                )
+                .first()
+            )
+            
+            if not admin_role:
+                raise ValueError(f"Role {RoleModel.ADMIN_ROLE} not found")
+            
+            # managerロールを削除（または非アクティブ化）
+            manager_role_model = manager_role[0]
+            manager_role_model.delete_flag = True
+            manager_role_model.updated_at = datetime.now()
+            
+            # adminロールを追加
+            new_role = UserRoleModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user_id),
+                role_id=admin_role.id,
+                delete_flag=False,
+                created_at=datetime.now(),
+                created_by=user.updated_by,
+                updated_at=datetime.now(),
+                updated_by=user.updated_by
+            )
+            self.db.add(new_role)
+            
+            # ユーザー更新時間を更新
+            user.updated_at = datetime.now()
+            
             self.db.commit()
-            self.db.refresh(db_user)
-
+            self.db.refresh(user)
+            
+            # ユーザー情報を取得して返す
             user_info = (
                 self.db.query(UserInfoModel)
                 .filter(
@@ -374,8 +522,8 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 .first()
             )
-
-            return self._to_entity(db_user, user_info)
+            
+            return self._to_entity(user, user_info)
         except Exception as e:
             self.db.rollback()
             raise e
@@ -390,24 +538,72 @@ class SQLAlchemyUserRepository(UserRepository):
             降格させたユーザー。見つからないか現在の役割が'admin'でない場合はNone。
         """
         try:
-            db_user = (
+            # 同様のパターンでadminからmanagerへの降格処理を実装
+            # ユーザーが存在するか確認
+            user = (
                 self.db.query(UserModel)
                 .filter(
                     UserModel.id == str(user_id),
                     UserModel.delete_flag == False,  # noqa: E712
-                    UserModel.manager_id == "admin",  # 現在adminであること確認
                 )
                 .first()
             )
-            if not db_user:
+            if not user:
                 return None
-
-            # 'manager'権限に降格させる
-            db_user.manager_id = "manager"  # 権限をmanagerに設定
-            db_user.updated_at = datetime.now()
+            
+            # adminロールを持っているかチェック
+            admin_role = (
+                self.db.query(UserRoleModel, RoleModel)
+                .join(RoleModel, UserRoleModel.role_id == RoleModel.id)
+                .filter(
+                    UserRoleModel.user_id == str(user_id),
+                    UserRoleModel.delete_flag == False,  # noqa: E712
+                    RoleModel.role_name == RoleModel.ADMIN_ROLE
+                )
+                .first()
+            )
+            
+            if not admin_role:
+                return None
+                
+            # managerロールを取得
+            manager_role = (
+                self.db.query(RoleModel)
+                .filter(
+                    RoleModel.role_name == RoleModel.MANAGER_ROLE,
+                    RoleModel.delete_flag == False  # noqa: E712
+                )
+                .first()
+            )
+            
+            if not manager_role:
+                raise ValueError(f"Role {RoleModel.MANAGER_ROLE} not found")
+            
+            # adminロールを削除（または非アクティブ化）
+            admin_role_model = admin_role[0]
+            admin_role_model.delete_flag = True
+            admin_role_model.updated_at = datetime.now()
+            
+            # managerロールを追加
+            new_role = UserRoleModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user_id),
+                role_id=manager_role.id,
+                delete_flag=False,
+                created_at=datetime.now(),
+                created_by=user.updated_by,
+                updated_at=datetime.now(),
+                updated_by=user.updated_by
+            )
+            self.db.add(new_role)
+            
+            # ユーザー更新時間を更新
+            user.updated_at = datetime.now()
+            
             self.db.commit()
-            self.db.refresh(db_user)
-
+            self.db.refresh(user)
+            
+            # ユーザー情報を取得して返す
             user_info = (
                 self.db.query(UserInfoModel)
                 .filter(
@@ -416,8 +612,8 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 .first()
             )
-
-            return self._to_entity(db_user, user_info)
+            
+            return self._to_entity(user, user_info)
         except Exception as e:
             self.db.rollback()
             raise e
@@ -432,25 +628,72 @@ class SQLAlchemyUserRepository(UserRepository):
             降格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
         """
         try:
-            db_user = (
+            # 同様のパターンでmanagerからuserへの降格処理を実装
+            # ユーザーが存在するか確認
+            user = (
                 self.db.query(UserModel)
                 .filter(
                     UserModel.id == str(user_id),
                     UserModel.delete_flag == False,  # noqa: E712
-                    UserModel.manager_id
-                    == "manager",  # 現在managerであること確認
                 )
                 .first()
             )
-            if not db_user:
+            if not user:
                 return None
-
-            # 'user'権限に降格させる
-            db_user.manager_id = "user"  # 権限をuserに設定
-            db_user.updated_at = datetime.now()
+            
+            # managerロールを持っているかチェック
+            manager_role = (
+                self.db.query(UserRoleModel, RoleModel)
+                .join(RoleModel, UserRoleModel.role_id == RoleModel.id)
+                .filter(
+                    UserRoleModel.user_id == str(user_id),
+                    UserRoleModel.delete_flag == False,  # noqa: E712
+                    RoleModel.role_name == RoleModel.MANAGER_ROLE
+                )
+                .first()
+            )
+            
+            if not manager_role:
+                return None
+                
+            # userロールを取得
+            user_role = (
+                self.db.query(RoleModel)
+                .filter(
+                    RoleModel.role_name == RoleModel.USER_ROLE,
+                    RoleModel.delete_flag == False  # noqa: E712
+                )
+                .first()
+            )
+            
+            if not user_role:
+                raise ValueError(f"Role {RoleModel.USER_ROLE} not found")
+            
+            # managerロールを削除（または非アクティブ化）
+            manager_role_model = manager_role[0]
+            manager_role_model.delete_flag = True
+            manager_role_model.updated_at = datetime.now()
+            
+            # userロールを追加
+            new_role = UserRoleModel(
+                id=str(uuid.uuid4()),
+                user_id=str(user_id),
+                role_id=user_role.id,
+                delete_flag=False,
+                created_at=datetime.now(),
+                created_by=user.updated_by,
+                updated_at=datetime.now(),
+                updated_by=user.updated_by
+            )
+            self.db.add(new_role)
+            
+            # ユーザー更新時間を更新
+            user.updated_at = datetime.now()
+            
             self.db.commit()
-            self.db.refresh(db_user)
-
+            self.db.refresh(user)
+            
+            # ユーザー情報を取得して返す
             user_info = (
                 self.db.query(UserInfoModel)
                 .filter(
@@ -459,11 +702,41 @@ class SQLAlchemyUserRepository(UserRepository):
                 )
                 .first()
             )
-
-            return self._to_entity(db_user, user_info)
+            
+            return self._to_entity(user, user_info)
         except Exception as e:
             self.db.rollback()
             raise e
+
+    def has_manager_role(self, user_id: UserId) -> bool:
+        """指定されたユーザーがマネージャー権限以上を持っているか確認する。
+
+        Args:
+            user_id: 確認するユーザーの一意識別子。
+
+        Returns:
+            マネージャー権限以上を持っている場合はTrue、そうでない場合はFalse。
+        """
+        # UserRoleModelとRoleModelを結合して、ユーザーのロールを取得
+        user_roles = (
+            self.db.query(UserRoleModel, RoleModel)
+            .join(RoleModel, UserRoleModel.role_id == RoleModel.id)
+            .filter(
+                UserRoleModel.user_id == str(user_id),
+                UserRoleModel.delete_flag == False,  # noqa: E712
+                RoleModel.delete_flag == False,      # noqa: E712
+            )
+            .all()
+        )
+        
+        # ユーザーのロール名を取得
+        role_names = [role[1].role_name for role in user_roles]
+        
+        # マネージャー以上のロールを持っているか確認
+        return any(
+            RoleModel.get_role_level(role_name) >= RoleModel.get_role_level(RoleModel.MANAGER_ROLE)
+            for role_name in role_names
+        )
 
     def _to_entity(
         self, model: UserModel, info_model: Optional[UserInfoModel] = None

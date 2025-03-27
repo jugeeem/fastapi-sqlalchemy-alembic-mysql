@@ -12,6 +12,7 @@ from app.application.dtos.user_dto import (
 )
 from app.application.services.user_service import UserService
 from app.domain.repositories.user_repository import UserRepository
+from app.domain.value_objects.user_id import UserId
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.user_repository import (
     SQLAlchemyUserRepository,
@@ -141,6 +142,7 @@ def update_user(
     user_id: str,
     user_update: UserUpdateDTO,
     service: UserService = Depends(get_user_service),
+    repo: UserRepository = Depends(get_user_repository),
 ):
     """指定されたIDのユーザー情報を更新する。
 
@@ -148,14 +150,29 @@ def update_user(
         user_id: 更新するユーザーの一意識別子。
         user_update: 更新するユーザー情報。
         service: ユーザーサービスのインスタンス。
+        repo: ユーザーリポジトリのインスタンス。
 
     Returns:
         更新されたユーザー情報。
 
     Raises:
-        HTTPException: ユーザーが見つからない場合や入力が無効な場合。
+        HTTPException: ユーザーが見つからない場合や入力が無効な場合、または権限が不足している場合。
     """
     try:
+        # manager_idが指定されている場合、更新者がマネージャー権限を持っているか確認
+        if user_update.manager_id is not None and user_update.updated_by:
+            try:
+                # 更新者IDがUUID形式で、かつ更新者がマネージャー権限を持っていない場合はエラー
+                updated_by_id = UserId(user_update.updated_by)
+                if not repo.has_manager_role(updated_by_id):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Insufficient privileges to update manager ID",
+                    )
+            except ValueError:
+                # 更新者IDが無効なUUID形式の場合、検証をスキップ
+                pass
+                
         user = service.update_user(user_id, user_update)
         if user is None:
             raise HTTPException(

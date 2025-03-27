@@ -100,3 +100,15 @@ class UserRepository(ABC):
             降格させたユーザー。見つからないか現在の役割が'manager'でない場合はNone。
         """
         pass
+
+    @abstractmethod
+    def has_manager_role(self, user_id: UserId) -> bool:
+        """指定されたユーザーがマネージャー権限以上を持っているか確認する。
+
+        Args:
+            user_id: 確認するユーザーの一意識別子。
+
+        Returns:
+            マネージャー権限以上を持っている場合はTrue、そうでない場合はFalse。
+        """
+        pass

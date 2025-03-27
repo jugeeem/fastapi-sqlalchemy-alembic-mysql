@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.mysql import CHAR
 
 from app.infrastructure.models.base_model import BaseModel
@@ -13,4 +13,5 @@ class UserModel(BaseModel):
     username = Column(String(255), nullable=False, unique=True, index=True)
     email = Column(String(255), nullable=False, index=True)
     password = Column(String(255), nullable=False)
-    manager_id = Column(CHAR(36), nullable=False)
+    # manager_idはnullを許可して、実際のマネージャーのIDを参照するように変更
+    manager_id = Column(CHAR(36), ForeignKey("users.id"), nullable=True)
