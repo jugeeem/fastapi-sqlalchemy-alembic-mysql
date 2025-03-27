@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, Dict, Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,8 +11,6 @@ from app.infrastructure.database import get_db
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.security.token import (
     create_access_token,
-    get_current_active_user,
-    get_current_user,
     verify_password,
 )
 
@@ -57,7 +55,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> Token:
     """アクセストークンを取得する
 
@@ -83,26 +81,3 @@ async def login_for_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
-
-@router.get("/me", response_model=UserInfo)
-async def read_users_me(
-    current_user: Annotated[UserModel, Depends(get_current_active_user)],
-) -> Dict[str, str]:
-    """現在のユーザー情報を取得する
-
-    Args:
-        current_user: 現在のユーザー
-
-    Returns:
-        ユーザー情報
-    """
-    # ユーザーのロールを取得
-    role = current_user.roles[0].role_name if current_user.roles else None
-    
-    return {
-        "id": str(current_user.id),
-        "username": current_user.username,
-        "email": current_user.email,
-        "role": role,
-    }

@@ -5,12 +5,12 @@ Revises: initial_migration
 Create Date: 2023-XX-XX XX:XX:XX.XXXXXX
 
 """
-from datetime import datetime
 import uuid
+from datetime import datetime
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.sql import table, column
+from alembic import op
+from sqlalchemy.sql import column, table
 
 # 修正: revisionとdownrevisionを適切な値に変更
 revision = 'role_migration'

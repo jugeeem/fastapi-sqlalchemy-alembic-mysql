@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -21,21 +21,21 @@ router = APIRouter()
 
 
 def get_attendance_repository(
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> AttendanceRepository:
     return SQLAlchemyAttendanceRepository(db)
 
 
 def get_attendance_service(
-    repo: AttendanceRepository = Depends(get_attendance_repository),
+    repo: Annotated[AttendanceRepository, Depends(get_attendance_repository)],
 ) -> AttendanceService:
     return AttendanceService(repo)
 
 
 @router.get("", response_model=List[AttendanceResponseDTO])
 def read_attendances(
-    query: AttendanceQueryDTO = Depends(),
-    service: AttendanceService = Depends(get_attendance_service),
+    query: Annotated[AttendanceQueryDTO, Depends()],
+    service: Annotated[AttendanceService, Depends(get_attendance_service)],
 ):
     """勤怠情報一覧を取得"""
     try:
@@ -61,7 +61,7 @@ def read_attendances(
 )
 def create_attendance(
     attendance_create: AttendanceCreateDTO,
-    service: AttendanceService = Depends(get_attendance_service),
+    service: Annotated[AttendanceService, Depends(get_attendance_service)],
 ):
     """新しい勤怠情報を作成"""
     try:
@@ -85,7 +85,7 @@ def create_attendance(
 @router.get("/{attendance_id}", response_model=AttendanceResponseDTO)
 def read_attendance(
     attendance_id: str,
-    service: AttendanceService = Depends(get_attendance_service),
+    service: Annotated[AttendanceService, Depends(get_attendance_service)],
 ):
     """勤怠情報を取得"""
     try:
@@ -106,7 +106,7 @@ def read_attendance(
 def update_attendance(
     attendance_id: str,
     attendance_update: AttendanceUpdateDTO,
-    service: AttendanceService = Depends(get_attendance_service),
+    service: Annotated[AttendanceService, Depends(get_attendance_service)],
 ):
     """勤怠情報を更新"""
     try:
@@ -128,8 +128,8 @@ def update_attendance(
 @router.delete("/{attendance_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_attendance(
     attendance_id: str,
-    updated_by: str = Body(..., embed=True),
-    service: AttendanceService = Depends(get_attendance_service),
+    updated_by: Annotated[str, Body(..., embed=True)],
+    service: Annotated[AttendanceService, Depends(get_attendance_service)],
 ):
     """勤怠情報を削除（論理削除）"""
     try:

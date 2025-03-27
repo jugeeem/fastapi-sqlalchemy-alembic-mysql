@@ -3,7 +3,12 @@ import uuid
 from sqlalchemy import Column, Index, String
 from sqlalchemy.dialects.mysql import CHAR
 
-from app.domain.constants.roles import USER_ROLE, MANAGER_ROLE, ADMIN_ROLE, get_role_level
+from app.domain.constants.roles import (
+    ADMIN_ROLE,
+    MANAGER_ROLE,
+    USER_ROLE,
+    get_role_level,
+)
 from app.infrastructure.models.base_model import BaseModel
 
 

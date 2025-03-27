@@ -1,6 +1,11 @@
 from fastapi import APIRouter
 
-from app.interfaces.api.v1.endpoints import attendances, auth, initialize, users
+from app.interfaces.api.v1.endpoints import (
+    attendances,
+    auth,
+    initialize,
+    users,
+)
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])

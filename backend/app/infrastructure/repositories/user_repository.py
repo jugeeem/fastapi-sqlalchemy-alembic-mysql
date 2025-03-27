@@ -2,17 +2,16 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
 from app.domain.value_objects.email import Email
 from app.domain.value_objects.user_id import UserId
+from app.infrastructure.models.role import RoleModel
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_info import UserInfoModel
 from app.infrastructure.models.user_role import UserRoleModel
-from app.infrastructure.models.role import RoleModel
 
 
 class SQLAlchemyUserRepository(UserRepository):
@@ -255,13 +254,12 @@ class SQLAlchemyUserRepository(UserRepository):
                     if not manager:
                         raise ValueError(f"Manager with ID {user.manager_id} not found")
                     
-                    # そのユーザーがマネージャー権限を持っているか確認
                     if not self.has_manager_role(manager_id_vo):
                         raise ValueError(
                             f"User with ID {user.manager_id} does not have manager privileges"
                         )
                 except ValueError as e:
-                    raise ValueError(f"Invalid manager ID: {str(e)}")
+                    raise ValueError(f"Invalid manager ID: {str(e)}") from e
 
             db_user.email = str(user.email)
             db_user.username = user.username

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.interfaces.api.v1.api import api_router
-from app.middleware import AccessLoggingMiddleware
+from app.middleware import AppMiddleware
 
 app = FastAPI(
     title="FastAPI Application",
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(AccessLoggingMiddleware)
+app.add_middleware(AppMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

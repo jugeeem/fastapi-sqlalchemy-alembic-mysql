@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -21,7 +21,7 @@ from app.infrastructure.repositories.user_repository import (
 router = APIRouter()
 
 
-def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+def get_user_repository(db: Annotated[Session, Depends(get_db)]) -> UserRepository:
     """ユーザーリポジトリのインスタンスを取得する。
 
     Args:
@@ -34,7 +34,7 @@ def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
 
 
 def get_user_service(
-    repo: UserRepository = Depends(get_user_repository),
+    repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> UserService:
     """ユーザーサービスのインスタンスを取得する。
 
@@ -49,8 +49,8 @@ def get_user_service(
 
 @router.get("", response_model=List[UserResponseDTO])
 def read_users(
-    query: UserQueryDTO = Depends(),
-    service: UserService = Depends(get_user_service),
+    query: Annotated[UserQueryDTO, Depends()],
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """ユーザーの一覧を取得する。
 
@@ -74,7 +74,7 @@ def read_users(
 )
 def create_user(
     user_create: UserCreateDTO,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """新しいユーザーを作成する。
 
@@ -109,7 +109,7 @@ def create_user(
 @router.get("/{user_id}", response_model=UserResponseDTO)
 def read_user(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーを取得する。
 
@@ -141,8 +141,8 @@ def read_user(
 def update_user(
     user_id: str,
     user_update: UserUpdateDTO,
-    service: UserService = Depends(get_user_service),
-    repo: UserRepository = Depends(get_user_repository),
+    service: Annotated[UserService, Depends(get_user_service)],
+    repo: Annotated[UserRepository, Depends(get_user_repository)],
 ):
     """指定されたIDのユーザー情報を更新する。
 
@@ -189,8 +189,8 @@ def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: str,
-    updated_by: str = Body(..., embed=True),
-    service: UserService = Depends(get_user_service),
+    updated_by: Annotated[str, Body(..., embed=True)],
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーを削除する。
 
@@ -217,7 +217,7 @@ def delete_user(
 @router.post("/{user_id}/promote-to-manager", response_model=UserResponseDTO)
 def promote_user_to_manager(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーの権限を'user'から'manager'に昇格させる。
 
@@ -248,7 +248,7 @@ def promote_user_to_manager(
 @router.post("/{user_id}/promote-to-admin", response_model=UserResponseDTO)
 def promote_user_to_admin(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーの権限を'manager'から'admin'に昇格させる。
 
@@ -281,7 +281,7 @@ def promote_user_to_admin(
 )
 def demote_user_from_admin_to_manager(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーの権限を'admin'から'manager'に降格させる。
 
@@ -314,7 +314,7 @@ def demote_user_from_admin_to_manager(
 )
 def demote_user_from_manager_to_user(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """指定されたIDのユーザーの権限を'manager'から'user'に降格させる。
 
