@@ -6,11 +6,8 @@ MANAGER_ROLE = "manager_role"
 ADMIN_ROLE = "admin_role"
 
 # ロールの階層 (低い値ほど低い権限)
-ROLE_HIERARCHY = {
-    USER_ROLE: 1,
-    MANAGER_ROLE: 2,
-    ADMIN_ROLE: 3
-}
+ROLE_HIERARCHY = {USER_ROLE: 1, MANAGER_ROLE: 2, ADMIN_ROLE: 3}
+
 
 def get_role_level(role_name):
     """ロールの権限レベルを取得する

@@ -19,19 +19,23 @@ router = APIRouter()
 
 class Token(BaseModel):
     """トークンレスポンスモデル"""
+
     access_token: str
     token_type: str
 
 
 class UserInfo(BaseModel):
     """ユーザー情報レスポンスモデル"""
+
     id: str
     username: str
     email: str
     role: Optional[str] = None
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Optional[UserModel]:
+def authenticate_user(
+    db: Session, username: str, password: str
+) -> Optional[UserModel]:
     """ユーザーを認証する
 
     Args:
@@ -76,7 +80,9 @@ async def login_for_access_token(
             detail="ユーザー名またはパスワードが正しくありません",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )

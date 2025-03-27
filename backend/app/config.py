@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     # セキュリティ関連設定
     SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_hex(32))
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30)
+    )
 
 
 settings = Settings()

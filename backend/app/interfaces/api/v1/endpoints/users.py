@@ -21,7 +21,9 @@ from app.infrastructure.repositories.user_repository import (
 router = APIRouter()
 
 
-def get_user_repository(db: Annotated[Session, Depends(get_db)]) -> UserRepository:
+def get_user_repository(
+    db: Annotated[Session, Depends(get_db)],
+) -> UserRepository:
     """ユーザーリポジトリのインスタンスを取得する。
 
     Args:
@@ -172,7 +174,7 @@ def update_user(
             except ValueError:
                 # 更新者IDが無効なUUID形式の場合、検証をスキップ
                 pass
-                
+
         user = service.update_user(user_id, user_update)
         if user is None:
             raise HTTPException(

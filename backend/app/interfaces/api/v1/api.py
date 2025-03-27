@@ -13,4 +13,6 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(
     attendances.router, prefix="/attendances", tags=["attendances"]
 )
-api_router.include_router(initialize.router, prefix="/initialize", tags=["initialize"])
+api_router.include_router(
+    initialize.router, prefix="/initialize", tags=["initialize"]
+)

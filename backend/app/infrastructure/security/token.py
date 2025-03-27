@@ -17,7 +17,9 @@ from app.infrastructure.models.user import UserModel
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2スキーム
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/token"
+)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -45,7 +47,9 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+) -> str:
     """アクセストークンを作成する
 
     Args:
@@ -63,7 +67,9 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -107,7 +113,8 @@ def get_current_user(
         raise credentials_exception
     if user.delete_flag:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="無効なユーザーです"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="無効なユーザーです",
         )
     return user
 
@@ -128,6 +135,7 @@ def get_current_active_user(
     """
     if current_user.delete_flag:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="無効なユーザーです"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="無効なユーザーです",
         )
     return current_user
