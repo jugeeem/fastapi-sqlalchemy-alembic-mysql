@@ -19,10 +19,13 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # import all models here to register them with Base.metadata
 from app.infrastructure.models.user import UserModel  # noqa
-from app.infrastructure.models.user_info import UserInfoModel  # noqa
-from app.infrastructure.models.role import RoleModel  # noqa
+from app.infrastructure.models.user_contact import UserContactModel  # noqa
+from app.infrastructure.models.user_profile import UserProfileModel  # noqa
 from app.infrastructure.models.user_role import UserRoleModel  # noqa
-from app.infrastructure.models.attendance import AttendanceModel  # noqa
+from app.infrastructure.models.role import RoleModel  # noqa
+from app.infrastructure.models.role_permission import RolePermissionModel  # noqa
+from app.infrastructure.models.permission import PermissionModel  # noqa
+
 
 target_metadata = Base.metadata
 

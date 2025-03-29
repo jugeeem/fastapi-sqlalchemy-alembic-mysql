@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # Security settings
-    SECRET_KEY: str
+    SECURITY_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
