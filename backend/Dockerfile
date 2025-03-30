@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt . 
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir pymysql && \
-    pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir pymysql \
+    && pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 FROM python:3.13.2-slim-bookworm
 
@@ -33,15 +33,15 @@ RUN adduser --disabled-password --gecos "" appuser
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt . 
 
-RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt && \
-    pip install --no-cache-dir pymysql && \
-    rm -rf /wheels requirements.txt
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
+    && pip install --no-cache-dir pymysql \
+    && rm -rf /wheels requirements.txt
 
 COPY . . 
 
-RUN mkdir -p /app/migrations/versions && \
-    chmod -R 777 /app/migrations && \
-    chown -R appuser:appuser /app/migrations
+RUN mkdir -p /app/migrations/versions \
+    && chmod -R 777 /app/migrations \
+    && chown -R appuser:appuser /app/migrations
 
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh

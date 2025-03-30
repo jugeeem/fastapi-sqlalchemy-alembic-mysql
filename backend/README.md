@@ -21,8 +21,20 @@ pytest -vv
 # テストカバレッジレポートを生成
 pytest --cov=app
 
+# カバレッジ統計の詳細を表示
+pytest --cov=app --cov-report=term-missing
+
 # HTMLフォーマットでカバレッジレポートを生成
 pytest --cov=app --cov-report=html
+
+# XMLフォーマットでカバレッジレポートを生成（CI/CDでの利用に適しています）
+pytest --cov=app --cov-report=xml
+```
+
+### 専用スクリプトでカバレッジレポートを生成する
+```bash
+# 同梱のスクリプトを使用してカバレッジレポートを生成
+bash test/test_coverage.sh
 ```
 
 ### 特定のテストだけを実行する  

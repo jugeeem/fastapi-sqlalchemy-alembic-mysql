@@ -1,3 +1,12 @@
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
+"""FastAPIアプリケーションモジュール
+
+このモジュールでは、FastAPIアプリケーションのインスタンスを作成し、
+ルーティングやミドルウェアを設定します。
+アプリケーションのエントリーポイントとして機能します。
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

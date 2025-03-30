@@ -9,7 +9,6 @@ retry_count=0
 
 # MySQLへの接続確認
 check_mysql_connection() {
-    # 方法2: mysqlコマンドを使用
     if command -v mysql >/dev/null 2>&1; then
         mysql -h db -u user -ppassword -e "SELECT 1" >/dev/null 2>&1
         return $?
