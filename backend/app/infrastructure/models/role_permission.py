@@ -6,11 +6,19 @@
 ロールに複数の権限を割り当て、権限を複数のロールに関連付けるための構造を提供します。
 """
 
-from sqlalchemy import Column, ForeignKey
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.permission import PermissionModel
+    from app.infrastructure.models.role import RoleModel
 
 
 class RolePermissionModel(BaseModel):
@@ -21,19 +29,23 @@ class RolePermissionModel(BaseModel):
     このテーブルにより、ロールに複数の権限を割り当て、各権限を複数のロールに関連付けることができます。
 
     Attributes:
-        role_id (str): ロールの一意識別子。rolesテーブルの外部キー。
-        permission_id (str): 権限の一意識別子。permissionsテーブルの外部キー。
+        role_id (UUID): ロールの一意識別子。rolesテーブルの外部キー。
+        permission_id (UUID): 権限の一意識別子。permissionsテーブルの外部キー。
         role (relationship): 関連するロールモデルへのリレーションシップ。
         permission (relationship): 関連する権限モデルへのリレーションシップ。
     """
 
     __tablename__ = "role_permissions"
 
-    role_id = Column(CHAR(36), ForeignKey("roles.id"), nullable=False)
-    permission_id = Column(
+    role_id: Mapped[UUID] = mapped_column(
+        CHAR(36), ForeignKey("roles.id"), nullable=False
+    )
+    permission_id: Mapped[UUID] = mapped_column(
         CHAR(36), ForeignKey("permissions.id"), nullable=False
     )
 
     # リレーションシップ
-    role = relationship("RoleModel", back_populates="permissions")
-    permission = relationship("PermissionModel", back_populates="roles")
+    role: Mapped["RoleModel"] = relationship(back_populates="permissions")
+    permission: Mapped["PermissionModel"] = relationship(
+        back_populates="roles"
+    )

@@ -7,10 +7,18 @@
 プロフィール情報や連絡先情報、ロールとのリレーションシップを管理します。
 """
 
-from sqlalchemy import Column, String
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.user_contact import UserContactModel
+    from app.infrastructure.models.user_profile import UserProfileModel
+    from app.infrastructure.models.user_role import UserRoleModel
 
 
 class UserModel(BaseModel):
@@ -33,15 +41,17 @@ class UserModel(BaseModel):
     __tablename__ = "users"
 
     # 認証情報
-    username = Column(String(255), unique=True, index=True, nullable=False)
-    email = Column(String(255), nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
+    username: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # リレーションシップ
-    profile = relationship(
-        "UserProfileModel", back_populates="user", uselist=False
+    profile: Mapped["UserProfileModel"] = relationship(
+        back_populates="user", uselist=False
     )
-    contact = relationship(
-        "UserContactModel", back_populates="user", uselist=False
+    contact: Mapped["UserContactModel"] = relationship(
+        back_populates="user", uselist=False
     )
-    roles = relationship("UserRoleModel", back_populates="user")
+    roles: Mapped[List["UserRoleModel"]] = relationship(back_populates="user")

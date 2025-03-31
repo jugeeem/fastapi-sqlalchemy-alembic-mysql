@@ -10,8 +10,8 @@ from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
+    DeclarativeBase,
     Session,
-    declarative_base,
     scoped_session,
     sessionmaker,
 )
@@ -19,14 +19,16 @@ from sqlalchemy.orm import (
 from app.config import settings
 
 # データベースエンジンの初期化
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(settings.DATABASE_URL, pool_recycle=3600)
 # セッションファクトリの作成（スレッドセーフなスコープ付きセッション）
-SessionLocal = scoped_session(
-    sessionmaker(autocommit=False, autoflush=False, bind=engine)
-)
+SessionLocal = scoped_session(sessionmaker(autoflush=False, bind=engine))
+
 
 # SQLAlchemyモデル定義の基底クラス
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """SQLAlchemyモデルの基底クラス"""
+
+    pass
 
 
 def init_db() -> None:

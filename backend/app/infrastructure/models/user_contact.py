@@ -7,11 +7,18 @@
 また、電話番号や郵便番号の形式を検証するための制約も定義しています。
 """
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, String
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
+
+from sqlalchemy import CheckConstraint, ForeignKey, String
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.user import UserModel
 
 
 class UserContactModel(BaseModel):
@@ -23,7 +30,7 @@ class UserContactModel(BaseModel):
     電話番号と郵便番号については、特定の形式に従っていることを保証する制約が設定されています。
 
     Attributes:
-        user_id (str): 関連するユーザーの一意識別子。usersテーブルの外部キー。
+        user_id (UUID): 関連するユーザーの一意識別子。usersテーブルの外部キー。
         phone_number (str): ユーザーの電話番号。形式は「000-0000-0000」、Null許容。
         zip_code (str): ユーザーの郵便番号。形式は「000-0000」、Null許容。
         address (str): ユーザーの住所。最大255文字、Null許容。
@@ -36,13 +43,17 @@ class UserContactModel(BaseModel):
 
     __tablename__ = "user_contacts"
 
-    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False)
-    phone_number = Column(String(13), nullable=True)
-    zip_code = Column(String(8), nullable=True)
-    address = Column(String(255), nullable=True)
+    user_id: Mapped[UUID] = mapped_column(
+        CHAR(36), ForeignKey("users.id"), nullable=False
+    )
+    phone_number: Mapped[Optional[str]] = mapped_column(
+        String(13), nullable=True
+    )
+    zip_code: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # リレーションシップ
-    user = relationship("UserModel", back_populates="contact")
+    user: Mapped["UserModel"] = relationship(back_populates="contact")
 
     # 制約
     __table_args__ = (

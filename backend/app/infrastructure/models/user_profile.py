@@ -6,12 +6,20 @@
 名前、フリガナ、性別、生年月日などの個人情報を格納し、ユーザーモデルとの関連を管理します。
 """
 
-from sqlalchemy import Column, Date, Enum, ForeignKey, String
+from datetime import date
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
+
+from sqlalchemy import Date, Enum, ForeignKey, String
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.value_objects.enums import Gender
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.user import UserModel
 
 
 class UserProfileModel(BaseModel):
@@ -22,7 +30,7 @@ class UserProfileModel(BaseModel):
     usersテーブルと1対1の関係を持ちます。
 
     Attributes:
-        user_id (str): 関連するユーザーの一意識別子。usersテーブルの外部キー。
+        user_id (UUID): 関連するユーザーの一意識別子。usersテーブルの外部キー。
         first_name (str): ユーザーの名（ファーストネーム）。最大255文字、Null許容。
         first_name_ruby (str): 名のフリガナ。最大255文字、Null許容。
         last_name (str): ユーザーの姓（ラストネーム）。最大255文字、Null許容。
@@ -34,13 +42,23 @@ class UserProfileModel(BaseModel):
 
     __tablename__ = "user_profiles"
 
-    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False)
-    first_name = Column(String(255), nullable=True)
-    first_name_ruby = Column(String(255), nullable=True)
-    last_name = Column(String(255), nullable=True)
-    last_name_ruby = Column(String(255), nullable=True)
-    gender = Column(Enum(Gender), nullable=False)
-    birth_day = Column(Date, nullable=False)
+    user_id: Mapped[UUID] = mapped_column(
+        CHAR(36), ForeignKey("users.id"), nullable=False
+    )
+    first_name: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    first_name_ruby: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    last_name: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    last_name_ruby: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
+    birth_day: Mapped[date] = mapped_column(Date, nullable=False)
 
     # リレーションシップ
-    user = relationship("UserModel", back_populates="profile")
+    user: Mapped["UserModel"] = relationship(back_populates="profile")

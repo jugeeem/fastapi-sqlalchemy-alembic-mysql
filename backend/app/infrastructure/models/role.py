@@ -6,11 +6,18 @@
 ロールはユーザーに割り当てられる権限のグループであり、アクセス制御に使用されます。
 """
 
-from sqlalchemy import Column, Enum, Text
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, List, Optional
+
+from sqlalchemy import Enum, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.value_objects.enums import Role
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.role_permission import RolePermissionModel
+    from app.infrastructure.models.user_role import UserRoleModel
 
 
 class RoleModel(BaseModel):
@@ -31,9 +38,13 @@ class RoleModel(BaseModel):
 
     __tablename__ = "roles"
 
-    name = Column(Enum(Role), unique=True, nullable=False, index=True)
-    description = Column(Text, nullable=True)
+    name: Mapped[Role] = mapped_column(
+        Enum(Role), unique=True, nullable=False, index=True
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # リレーションシップ
-    users = relationship("UserRoleModel", back_populates="role")
-    permissions = relationship("RolePermissionModel", back_populates="role")
+    users: Mapped[List["UserRoleModel"]] = relationship(back_populates="role")
+    permissions: Mapped[List["RolePermissionModel"]] = relationship(
+        back_populates="role"
+    )

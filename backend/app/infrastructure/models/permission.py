@@ -6,10 +6,16 @@
 権限は特定の機能や操作へのアクセスを制御するために使用されます。
 """
 
-from sqlalchemy import Column, String, Text
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, List, Optional
+
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.models.base_model import BaseModel
+
+# 型チェック時のみインポート
+if TYPE_CHECKING:
+    from app.infrastructure.models.role_permission import RolePermissionModel
 
 
 class PermissionModel(BaseModel):
@@ -28,8 +34,12 @@ class PermissionModel(BaseModel):
 
     __tablename__ = "permissions"
 
-    name = Column(String(255), unique=True, nullable=False, index=True)
-    description = Column(Text, nullable=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # リレーションシップ
-    roles = relationship("RolePermissionModel", back_populates="permission")
+    roles: Mapped[List["RolePermissionModel"]] = relationship(
+        back_populates="permission"
+    )
