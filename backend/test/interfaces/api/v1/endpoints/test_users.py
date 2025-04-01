@@ -6,6 +6,8 @@
 ユーザー作成エンドポイントの正常系・異常系テストなどを含みます。
 """
 
+import uuid
+
 from fastapi import status
 from fastapi.testclient import TestClient
 
@@ -130,5 +132,65 @@ class TestCreateUser:
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        data = response.json()
+        assert "detail" in data
+
+
+class TestGetUser:
+    """ユーザー取得エンドポイントのテストケース
+
+    ユーザー取得エンドポイント（GET /api/v1/users/{user_id}）に対する
+    様々なテストケースを定義します。
+    """
+
+    def test_get_user_success(self, client: TestClient, valid_user_data):
+        """存在するユーザーIDでユーザーが正常に取得できることを確認
+
+        有効なユーザーIDを使用して、ユーザーが正常に取得されることをテストします。
+
+        Args:
+            client (TestClient): FastAPIのテストクライアント
+            valid_user_data (dict): 有効なユーザーデータ
+        """
+        # 事前にユーザーを作成
+        create_response = client.post(
+            f"{settings.API_V1_STR}/users/", json=valid_user_data
+        )
+        assert create_response.status_code == status.HTTP_201_CREATED
+        created_user = create_response.json()
+        user_id = created_user["id"]
+
+        # ユーザーIDを使用してユーザーを取得
+        response = client.get(f"{settings.API_V1_STR}/users/{user_id}")
+
+        # 検証
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == user_id
+        assert data["username"] == valid_user_data["username"]
+        assert data["email"] == valid_user_data["email"]
+        assert (
+            "password" not in data
+        )  # パスワードはレスポンスに含まれないことを確認
+
+    def test_get_user_not_found(self, client: TestClient):
+        """存在しないユーザーIDで404エラーが返されることを確認
+
+        存在しないユーザーIDを使用した場合に、
+        適切なエラーレスポンスが返されることをテストします。
+
+        Args:
+            client (TestClient): FastAPIのテストクライアント
+        """
+        # 存在しないUUID
+        non_existent_user_id = str(uuid.uuid4())
+
+        # リクエスト
+        response = client.get(
+            f"{settings.API_V1_STR}/users/{non_existent_user_id}"
+        )
+
+        # 検証
+        assert response.status_code == status.HTTP_404_NOT_FOUND
         data = response.json()
         assert "detail" in data

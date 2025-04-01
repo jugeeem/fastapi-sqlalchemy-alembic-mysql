@@ -77,3 +77,17 @@ class UserRepository(ABC):
             ValueError: デフォルトユーザーロールが見つからない場合
         """
         pass
+
+    @abstractmethod
+    def find_by_id(self, user_id: UUID) -> Optional[User]:
+        """ユーザーIDでユーザーを検索する
+
+        指定されたユーザーIDに一致するユーザーを検索します。
+
+        Args:
+            user_id (UUID): 検索するユーザーID
+
+        Returns:
+            Optional[User]: 見つかったユーザーエンティティ。見つからない場合はNone。
+        """
+        pass

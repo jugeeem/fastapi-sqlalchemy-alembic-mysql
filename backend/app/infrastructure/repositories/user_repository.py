@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
-from app.domain.value_objects.enums import Role
+from app.domain.value_objects.enums import BooleanType, Role
 from app.infrastructure.models.role import RoleModel
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_contact import UserContactModel
@@ -134,7 +134,10 @@ class SQLAlchemyUserRepository(UserRepository):
         try:
             user_model = (
                 self.db_session.query(UserModel)
-                .filter(UserModel.username == username)
+                .filter(
+                    UserModel.username == username,
+                    UserModel.delete_flag == BooleanType.FALSE.value,
+                )
                 .first()
             )
             if not user_model:
@@ -162,7 +165,41 @@ class SQLAlchemyUserRepository(UserRepository):
         try:
             user_model = (
                 self.db_session.query(UserModel)
-                .filter(UserModel.email == email)
+                .filter(
+                    UserModel.email == email,
+                    UserModel.delete_flag == BooleanType.FALSE.value,
+                )
+                .first()
+            )
+            if not user_model:
+                return None
+
+            return self._model_to_entity(user_model)
+        except Exception as e:
+            self.db_session.rollback()
+            raise e
+
+    def find_by_id(self, user_id: UUID) -> Optional[User]:
+        """ユーザーIDでユーザーを検索する
+
+        指定されたユーザーIDに一致するユーザーをデータベースから検索します。
+
+        Args:
+            user_id (UUID): 検索するユーザーID
+
+        Returns:
+            Optional[User]: 見つかったユーザーエンティティ。見つからない場合はNone。
+
+        Raises:
+            Exception: データベース操作中に発生した例外
+        """
+        try:
+            user_model = (
+                self.db_session.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == BooleanType.FALSE.value,
+                )
                 .first()
             )
             if not user_model:
@@ -187,7 +224,10 @@ class SQLAlchemyUserRepository(UserRepository):
         """
         user_role = (
             self.db_session.query(RoleModel)
-            .filter(RoleModel.name == Role.USER)
+            .filter(
+                RoleModel.name == Role.USER,
+                RoleModel.delete_flag == BooleanType.FALSE.value,
+            )
             .first()
         )
         if not user_role:

@@ -7,6 +7,8 @@
 ユーザーの作成、認証、更新などの操作を行います。
 """
 
+from uuid import UUID
+
 from passlib.context import CryptContext
 
 from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO
@@ -106,6 +108,46 @@ class UserService:
             updated_at=created_user.updated_at,
             updated_by=created_user.updated_by,
             delete_flag=created_user.delete_flag,
+        )
+
+    def get_user_by_id(self, user_id: UUID) -> UserResponseDTO:
+        """ユーザーIDでユーザーを取得する
+
+        指定されたユーザーIDに一致するユーザーを検索し、
+        ユーザー情報をDTO形式で返します。
+
+        Args:
+            user_id (UUID): 検索するユーザーID
+
+        Returns:
+            UserResponseDTO: 見つかったユーザー情報を含むレスポンスDTO
+
+        Raises:
+            ValueError: 指定されたIDのユーザーが見つからない場合
+        """
+        user = self.user_repository.find_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        return UserResponseDTO(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            first_name=user.first_name,
+            first_name_ruby=user.first_name_ruby,
+            last_name=user.last_name,
+            last_name_ruby=user.last_name_ruby,
+            gender=user.gender,
+            birth_day=user.birth_day,
+            phone_number=user.phone_number,
+            zip_code=user.zip_code,
+            address=user.address,
+            role_ids=user.role_ids,
+            created_at=user.created_at,
+            created_by=user.created_by,
+            updated_at=user.updated_at,
+            updated_by=user.updated_by,
+            delete_flag=user.delete_flag,
         )
 
     def _get_password_hash(self, password: str) -> str:

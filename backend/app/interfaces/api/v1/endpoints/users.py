@@ -7,6 +7,7 @@
 """
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -83,4 +84,32 @@ def create_user(
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.get("/{user_id}", response_model=UserResponseDTO)
+def get_user(
+    user_id: UUID,
+    user_service: Annotated[UserService, Depends(get_user_service)],
+):
+    """ユーザーIDでユーザーを取得する
+
+    指定されたユーザーIDに一致するユーザーの情報を返します。
+
+    Args:
+        user_id (UUID): 取得するユーザーのID
+        user_service (UserService): ユーザー関連の操作を行うサービス
+
+    Returns:
+        UserResponseDTO: 取得したユーザーの情報
+
+    Raises:
+        HTTPException:
+            - 404 Not Found: 指定されたIDのユーザーが見つからない場合
+    """
+    try:
+        return user_service.get_user_by_id(user_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
         ) from e

@@ -6,10 +6,10 @@
 これらの列挙型は、型安全性の確保と、意味のある値の限定に使用されます。
 """
 
-import enum
+from enum import Enum
 
 
-class Gender(enum.Enum):
+class Gender(Enum):
     """性別の選択肢を定義する列挙型
 
     ユーザーの性別を表現するための列挙型です。
@@ -24,7 +24,7 @@ class Gender(enum.Enum):
     FEMALE = "female"
 
 
-class Role(enum.Enum):
+class Role(Enum):
     """ユーザー権限レベルを定義する列挙型
 
     システム内のユーザーロール（権限グループ）を表す列挙型です。
@@ -41,3 +41,18 @@ class Role(enum.Enum):
     MANAGER = "manager"  # 管理者
     USER = "user"  # 一般ユーザ
     GUEST = "guest"  # 閲覧のみ
+
+
+class BooleanType(Enum):
+    """MySQLのTINYINT型（0または1）と対応する列挙型
+
+    MySQLのTINYINT型の値（0または1）を表現するための列挙型です。
+    データベースとのやり取りや、値の検証に使用されます。
+
+    Attributes:
+        FALSE (int): 偽を表す値（0）。
+        TRUE (int): 真を表す値（1）。
+    """
+
+    FALSE = 0
+    TRUE = 1

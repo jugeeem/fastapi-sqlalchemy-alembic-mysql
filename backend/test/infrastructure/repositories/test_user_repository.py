@@ -6,6 +6,8 @@
 ユーザーの作成、検索、デフォルトロールの取得などの機能を検証します。
 """
 
+import uuid
+
 import pytest
 from sqlalchemy.orm import Session
 
@@ -235,3 +237,65 @@ class TestSQLAlchemyUserRepository:
         # USERロールが存在しない場合はValueErrorが発生することを確認
         with pytest.raises(ValueError):
             repo.get_default_user_role_id()
+
+    def test_find_by_id_existing(self, db: Session):
+        """既存ユーザーIDでのユーザー検索をテスト
+
+        存在するユーザーIDでユーザーが正しく検索できることを確認します。
+
+        Args:
+            db (Session): テスト用データベースセッション
+        """
+        # テスト用のロールを作成
+        role = RoleModel(
+            name=Role.USER.value,
+            description="Test Role",
+            created_by="system",
+            updated_by="system",
+        )
+        db.add(role)
+        db.commit()
+
+        # リポジトリのインスタンス化
+        repo = SQLAlchemyUserRepository(db)
+
+        # テスト用ユーザーの作成
+        test_user = User(
+            username="findbyiduser",
+            email="findbyid@example.com",
+            hashed_password="hashed_password_here",
+            gender=Gender.MALE,
+            birth_day="2000-01-01",
+            role_ids=[role.id],
+        )
+        created_user = repo.create(test_user)
+        user_id = created_user.id
+
+        # IDで検索
+        found_user = repo.find_by_id(user_id)
+
+        # 検証
+        assert found_user is not None
+        assert found_user.id == user_id
+        assert found_user.username == "findbyiduser"
+        assert found_user.email == "findbyid@example.com"
+
+    def test_find_by_id_nonexistent(self, db: Session):
+        """存在しないユーザーIDでの検索をテスト
+
+        存在しないユーザーIDでNoneが返されることを確認します。
+
+        Args:
+            db (Session): テスト用データベースセッション
+        """
+        # リポジトリのインスタンス化
+        repo = SQLAlchemyUserRepository(db)
+
+        # 存在しないUUID
+        non_existent_user_id = uuid.uuid4()
+
+        # 検索
+        found_user = repo.find_by_id(non_existent_user_id)
+
+        # 検証
+        assert found_user is None
