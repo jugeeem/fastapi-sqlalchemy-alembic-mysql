@@ -69,14 +69,14 @@ def create_user(
     作成されたユーザーの情報をレスポンスとして返します。
 
     Args:
-        user_create(UserCreateDTO): ユーザー作成に必要な情報を含むDTO
-        user_service(UserService): ユーザー関連の操作を行うサービス
+        user_create(UserCreateDTO): ユーザー作成に必要な情報を含むDTO.
+        user_service(UserService): ユーザー関連の操作を行うサービス.
 
     Returns:
-        UserResponseDTO: 作成されたユーザーの情報
+        UserResponseDTO: 作成されたユーザーの情報.
 
     Raises:
-        HTTPException: ユーザー作成時にエラーが発生した場合（400 Bad Request）
+        HTTPException: ユーザー作成時にエラーが発生した場合（400 Bad Request）.
     """
     try:
         return user_service.create_user(user_create)
