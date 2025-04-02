@@ -37,10 +37,10 @@ class Role(Enum):
         GUEST (str): 閲覧のみユーザー。閲覧権限のみを持ちます。
     """
 
-    ADMIN = "admin"  # システム管理者
-    MANAGER = "manager"  # 管理者
-    USER = "user"  # 一般ユーザ
-    GUEST = "guest"  # 閲覧のみ
+    ADMIN = "admin"
+    MANAGER = "manager"
+    USER = "user"
+    GUEST = "guest"
 
 
 class BooleanType(Enum):
