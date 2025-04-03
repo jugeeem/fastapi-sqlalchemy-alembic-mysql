@@ -109,3 +109,18 @@ class UserRepository(ABC):
             list[User]: ユーザーエンティティのリスト
         """
         pass
+
+    @abstractmethod
+    def update(self, user: User) -> User:
+        """既存ユーザー情報を更新する
+
+        ユーザーエンティティの情報を受け取り、データベースの対応するユーザー情報を更新します。
+        更新されたエンティティを返します。
+
+        Args:
+            user (User): 更新するユーザー情報を含むエンティティ
+
+        Returns:
+            User: 更新されたユーザーエンティティ
+        """
+        pass

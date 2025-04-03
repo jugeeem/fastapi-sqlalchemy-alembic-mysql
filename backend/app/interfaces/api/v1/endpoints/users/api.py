@@ -20,8 +20,12 @@ from app.interfaces.api.v1.endpoints.users.get import router as get_router
 from app.interfaces.api.v1.endpoints.users.get_list import (
     router as get_list_router,
 )
+from app.interfaces.api.v1.endpoints.users.update import (
+    router as update_router,
+)
 
 router = APIRouter()
 router.include_router(create_router)
 router.include_router(get_router)
 router.include_router(get_list_router)
+router.include_router(update_router)

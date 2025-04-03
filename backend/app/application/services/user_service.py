@@ -11,7 +11,11 @@ from uuid import UUID
 
 from passlib.context import CryptContext
 
-from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO
+from app.application.dtos.user_dto import (
+    UserCreateDTO,
+    UserResponseDTO,
+    UserUpdateDTO,
+)
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import UserRepository
 
@@ -192,6 +196,71 @@ class UserService:
             )
             for user in users
         ]
+
+    def update_user(
+        self, user_id: UUID, user_dto: UserUpdateDTO, updated_by: str
+    ) -> UserResponseDTO:
+        """既存ユーザー情報を更新する
+
+        指定されたユーザーIDのユーザー情報を更新します。
+        更新データをDTOからエンティティに変換し、リポジトリを通じてデータベースに保存します。
+        更新後のユーザー情報をDTO形式で返します。
+
+        Args:
+            user_id (UUID): 更新対象ユーザーのID
+            user_dto (UserUpdateDTO): 更新するユーザー情報を含むDTO
+            updated_by (str): 更新者のユーザー名
+
+        Returns:
+            UserResponseDTO: 更新後のユーザー情報を含むレスポンスDTO
+
+        Raises:
+            ValueError: 指定されたIDのユーザーが見つからない場合
+        """
+        # 既存ユーザーの確認
+        existing_user = self.user_repository.find_by_id(user_id)
+        if not existing_user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        # 更新用エンティティの作成
+        update_user = User(
+            id=user_id,
+            first_name=user_dto.first_name,
+            first_name_ruby=user_dto.first_name_ruby,
+            last_name=user_dto.last_name,
+            last_name_ruby=user_dto.last_name_ruby,
+            gender=user_dto.gender,
+            birth_day=user_dto.birth_day,
+            phone_number=user_dto.phone_number,
+            zip_code=user_dto.zip_code,
+            address=user_dto.address,
+            updated_by=updated_by,
+        )
+
+        # ユーザー情報を更新
+        updated_user = self.user_repository.update(update_user)
+
+        # レスポンスDTOを作成して返す
+        return UserResponseDTO(
+            id=updated_user.id,
+            username=updated_user.username,
+            email=updated_user.email,
+            first_name=updated_user.first_name,
+            first_name_ruby=updated_user.first_name_ruby,
+            last_name=updated_user.last_name,
+            last_name_ruby=updated_user.last_name_ruby,
+            gender=updated_user.gender,
+            birth_day=updated_user.birth_day,
+            phone_number=updated_user.phone_number,
+            zip_code=updated_user.zip_code,
+            address=updated_user.address,
+            role_ids=updated_user.role_ids,
+            created_at=updated_user.created_at,
+            created_by=updated_user.created_by,
+            updated_at=updated_user.updated_at,
+            updated_by=updated_user.updated_by,
+            delete_flag=updated_user.delete_flag,
+        )
 
     def _get_password_hash(self, password: str) -> str:
         """パスワードをハッシュ化する

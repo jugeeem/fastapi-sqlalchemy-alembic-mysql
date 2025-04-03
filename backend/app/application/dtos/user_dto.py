@@ -159,3 +159,71 @@ class UserGetListQueryDTO(BaseModel):
     limit: int = Field(default=15, gt=1, le=100)
     order_by: Literal["created_at", "updated_at"] = Field(default="created_at")
     ascending: Literal["true", "false"] = Field(default="true")
+
+
+class UserUpdateDTO(BaseModel):
+    """ユーザー更新リクエスト用DTO
+
+    APIからユーザー情報更新リクエストを受け取るためのDTOです。
+    クライアントから送信されたデータのバリデーションを行い、
+    ユーザー情報更新に必要な情報を構造化された形式で提供します。
+
+    Attributes:
+        first_name (str, optional): ユーザーの名（ファーストネーム）。
+        first_name_ruby (str, optional): 名のフリガナ。
+        last_name (str, optional): ユーザーの姓（ラストネーム）。
+        last_name_ruby (str, optional): 姓のフリガナ。
+        gender (Gender, optional): ユーザーの性別。
+        birth_day (date, optional): ユーザーの生年月日。
+        phone_number (str, optional): ユーザーの電話番号。形式は「000-0000-0000」。
+        zip_code (str, optional): ユーザーの郵便番号。形式は「000-0000」。
+        address (str, optional): ユーザーの住所。
+    """
+
+    first_name: Optional[str] = None
+    first_name_ruby: Optional[str] = None
+    last_name: Optional[str] = None
+    last_name_ruby: Optional[str] = None
+    gender: Optional[Gender] = None
+    birth_day: Optional[date] = None
+    phone_number: Optional[str] = None
+    zip_code: Optional[str] = None
+    address: Optional[str] = None
+
+    @field_validator("phone_number")
+    def validate_phone_number(cls, v):
+        """電話番号のフォーマットを検証する
+
+        電話番号が000-0000-0000の形式に従っているかを検証します。
+
+        Args:
+            v (str): 検証する電話番号
+
+        Returns:
+            str: 検証済みの電話番号
+
+        Raises:
+            ValueError: 電話番号の形式が不正な場合
+        """
+        if v and not re.match(r"^[0-9]{3}-[0-9]{4}-[0-9]{4}$", v):
+            raise ValueError("Phone number must be in format: 000-0000-0000")
+        return v
+
+    @field_validator("zip_code")
+    def validate_zip_code(cls, v):
+        """郵便番号のフォーマットを検証する
+
+        郵便番号が000-0000の形式に従っているかを検証します。
+
+        Args:
+            v (str): 検証する郵便番号
+
+        Returns:
+            str: 検証済みの郵便番号
+
+        Raises:
+            ValueError: 郵便番号の形式が不正な場合
+        """
+        if v and not re.match(r"^[0-9]{3}-[0-9]{4}$", v):
+            raise ValueError("Zip code must be in format: 000-0000")
+        return v

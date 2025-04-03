@@ -269,6 +269,85 @@ class SQLAlchemyUserRepository(UserRepository):
             self.db_session.rollback()
             raise e
 
+    def update(self, user: User) -> User:
+        """既存ユーザー情報を更新する
+
+        ユーザーエンティティを受け取り、関連するテーブル
+        （user_profiles, user_contacts）のデータを更新します。
+
+        Args:
+            user (User): 更新するユーザーエンティティ
+
+        Returns:
+            User: 更新されたユーザーエンティティ
+
+        Raises:
+            Exception: データベース操作中に発生した例外
+            ValueError: 指定されたIDのユーザーが見つからない場合
+        """
+        try:
+            # ユーザーの存在確認
+            user_model = (
+                self.db_session.query(UserModel)
+                .filter(
+                    UserModel.id == str(user.id),
+                    UserModel.delete_flag == BooleanType.FALSE.value,
+                )
+                .first()
+            )
+
+            if not user_model:
+                raise ValueError(f"User with ID {user.id} not found")
+
+            # UserProfileModelの更新
+            profile_model = (
+                self.db_session.query(UserProfileModel)
+                .filter(UserProfileModel.user_id == str(user.id))
+                .first()
+            )
+
+            if profile_model:
+                if user.first_name is not None:
+                    profile_model.first_name = user.first_name
+                if user.first_name_ruby is not None:
+                    profile_model.first_name_ruby = user.first_name_ruby
+                if user.last_name is not None:
+                    profile_model.last_name = user.last_name
+                if user.last_name_ruby is not None:
+                    profile_model.last_name_ruby = user.last_name_ruby
+                if user.gender is not None:
+                    profile_model.gender = user.gender
+                if user.birth_day is not None:
+                    profile_model.birth_day = user.birth_day
+                profile_model.updated_by = user.updated_by
+
+            # UserContactModelの更新
+            contact_model = (
+                self.db_session.query(UserContactModel)
+                .filter(UserContactModel.user_id == str(user.id))
+                .first()
+            )
+
+            if contact_model:
+                if user.phone_number is not None:
+                    contact_model.phone_number = user.phone_number
+                if user.zip_code is not None:
+                    contact_model.zip_code = user.zip_code
+                if user.address is not None:
+                    contact_model.address = user.address
+                contact_model.updated_by = user.updated_by
+
+            # UserModelの更新日時も更新
+            user_model.updated_by = user.updated_by
+
+            self.db_session.commit()
+
+            # 更新後のエンティティを返す
+            return self._model_to_entity(user_model)
+        except Exception as e:
+            self.db_session.rollback()
+            raise e
+
     def _model_to_entity(self, user_model: UserModel) -> User:
         """データベースモデルからドメインエンティティへの変換
 
