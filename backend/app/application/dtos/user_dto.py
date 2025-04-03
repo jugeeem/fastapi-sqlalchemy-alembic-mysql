@@ -9,7 +9,7 @@ DTOはAPIとドメイン層の間でデータを受け渡すための構造体�
 
 import re
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -139,3 +139,23 @@ class UserResponseDTO(BaseModel):
     delete_flag: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserGetListQueryDTO(BaseModel):
+    """ユーザー一覧取得クエリ用DTO
+
+    APIからユーザー一覧を取得するためのDTOです。
+    クライアントからのクエリパラメータを受け取り、
+    データベースクエリに必要な情報を構造化された形式で提供します。
+
+    Attributes:
+        offset (int): 取得開始位置。デフォルトは0。
+        limit (int): 取得件数。デフォルトは15、最大100。
+        order_by (str): ソート基準。'created_at'または'updated_at'。
+        ascending (str): 昇順または降順の指定。'true'または'false'。
+    """
+
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=15, gt=1, le=100)
+    order_by: Literal["created_at", "updated_at"] = Field(default="created_at")
+    ascending: Literal["true", "false"] = Field(default="true")

@@ -150,6 +150,49 @@ class UserService:
             delete_flag=user.delete_flag,
         )
 
+    def get_users(
+        self, offset: int = 0, limit: int = 100, ascending: bool = True
+    ) -> list[UserResponseDTO]:
+        """ユーザー一覧を取得する
+
+        ページネーションとソート機能を備えたユーザー一覧取得機能を提供します。
+        取得したユーザーエンティティをDTOに変換して返します。
+
+        Args:
+            offset (int, optional): スキップするレコード数。デフォルトは0。
+            limit (int, optional): 取得する最大レコード数。デフォルトは100。
+            ascending (bool, optional): 昇順にソートするかどうか。デフォルトはTrue。
+
+        Returns:
+            list[UserResponseDTO]: ユーザー情報DTOのリスト
+        """
+
+        users = self.user_repository.get_users(offset, limit, ascending)
+
+        return [
+            UserResponseDTO(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                first_name=user.first_name,
+                first_name_ruby=user.first_name_ruby,
+                last_name=user.last_name,
+                last_name_ruby=user.last_name_ruby,
+                gender=user.gender,
+                birth_day=user.birth_day,
+                phone_number=user.phone_number,
+                zip_code=user.zip_code,
+                address=user.address,
+                role_ids=user.role_ids,
+                created_at=user.created_at,
+                created_by=user.created_by,
+                updated_at=user.updated_at,
+                updated_by=user.updated_by,
+                delete_flag=user.delete_flag,
+            )
+            for user in users
+        ]
+
     def _get_password_hash(self, password: str) -> str:
         """パスワードをハッシュ化する
 

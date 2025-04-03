@@ -91,3 +91,21 @@ class UserRepository(ABC):
             Optional[User]: 見つかったユーザーエンティティ。見つからない場合はNone。
         """
         pass
+
+    @abstractmethod
+    def get_users(
+        self, offset: int = 0, limit: int = 100, ascending: bool = True
+    ) -> list[User]:
+        """ユーザー一覧を取得する
+
+        ページネーションとソートに対応したユーザー一覧を取得します。
+
+        Args:
+            offset (int, optional): スキップするレコード数。デフォルトは0。
+            limit (int, optional): 取得する最大レコード数。デフォルトは100。
+            ascending (bool, optional): 昇順にソートするかどうか。デフォルトはTrue。
+
+        Returns:
+            list[User]: ユーザーエンティティのリスト
+        """
+        pass

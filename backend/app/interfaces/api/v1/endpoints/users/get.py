@@ -14,7 +14,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.application.dtos.user_dto import UserCreateDTO, UserResponseDTO
+from app.application.dtos.user_dto import UserResponseDTO
 from app.dependency.users import UserDependency
 
 router = APIRouter()

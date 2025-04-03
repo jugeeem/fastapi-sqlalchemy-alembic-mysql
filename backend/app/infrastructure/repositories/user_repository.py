@@ -234,6 +234,41 @@ class SQLAlchemyUserRepository(UserRepository):
             raise ValueError("Default user role not found in database")
         return user_role.id
 
+    def get_users(
+        self, offset: int = 0, limit: int = 100, ascending: bool = True
+    ) -> list[User]:
+        """ユーザー一覧を取得する
+
+        ページネーションとソートに対応したユーザー一覧をデータベースから取得します。
+
+        Args:
+            offset (int, optional): スキップするレコード数。デフォルトは0。
+            limit (int, optional): 取得する最大レコード数。デフォルトは100。
+            ascending (bool, optional): 昇順にソートするかどうか。デフォルトはTrue。
+
+        Returns:
+            list[User]: ユーザーエンティティのリスト
+
+        Raises:
+            Exception: データベース操作中に発生した例外
+        """
+        try:
+            query = self.db_session.query(UserModel).filter(
+                UserModel.delete_flag == BooleanType.FALSE.value
+            )
+
+            if ascending:
+                query = query.order_by(UserModel.created_at.asc())
+            else:
+                query = query.order_by(UserModel.created_at.desc())
+
+            users = query.offset(offset).limit(limit).all()
+
+            return [self._model_to_entity(user) for user in users]
+        except Exception as e:
+            self.db_session.rollback()
+            raise e
+
     def _model_to_entity(self, user_model: UserModel) -> User:
         """データベースモデルからドメインエンティティへの変換
 
