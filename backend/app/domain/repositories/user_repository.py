@@ -124,3 +124,18 @@ class UserRepository(ABC):
             User: 更新されたユーザーエンティティ
         """
         pass
+
+    @abstractmethod
+    def remove(self, user_id: UUID, updated_by: str) -> None:
+        """ユーザーを論理削除する
+
+        指定されたユーザーIDに対応するユーザーを削除します。
+
+        Args:
+            user_id (UUID): 削除するユーザーのID
+            updated_by (str): 更新者のユーザー名
+
+        Raises:
+            ValueError: ユーザーが見つからない場合
+        """
+        pass

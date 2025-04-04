@@ -262,6 +262,25 @@ class UserService:
             delete_flag=updated_user.delete_flag,
         )
 
+    def remove_user(self, user_id: UUID, updated_by: str) -> None:
+        """ユーザーを削除する
+
+        指定されたユーザーIDのユーザーを論理削除します。
+        削除フラグを立てることで、データベースからは削除されませんが、
+        アプリケーション内では無効なユーザーとして扱われます。
+
+        Args:
+            user_id (UUID): 削除するユーザーのID
+            updated_by (str): 更新者のユーザー名
+
+        Raises:
+            ValueError: 指定されたIDのユーザーが見つからない場合
+        """
+        existing_user = self.user_repository.find_by_id(user_id)
+        if not existing_user:
+            raise ValueError(f"User with ID {user_id} not found")
+        self.user_repository.remove(user_id, updated_by)
+
     def _get_password_hash(self, password: str) -> str:
         """パスワードをハッシュ化する
 

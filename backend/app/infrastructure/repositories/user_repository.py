@@ -348,6 +348,38 @@ class SQLAlchemyUserRepository(UserRepository):
             self.db_session.rollback()
             raise e
 
+    def remove(self, user_id: UUID, updated_by: str) -> None:
+        """ユーザーを論理削除する
+
+        指定されたユーザーIDのユーザーを論理削除します。
+        削除フラグをTrueに設定します。
+
+        Args:
+            user_id (UUID): 削除するユーザーのID
+            updated_by (str): 更新者のユーザー名
+
+        Raises:
+            Exception: データベース操作中に発生した例外
+            ValueError: 指定されたIDのユーザーが見つからない場合
+        """
+        try:
+            user_model = (
+                self.db_session.query(UserModel)
+                .filter(
+                    UserModel.id == str(user_id),
+                    UserModel.delete_flag == BooleanType.FALSE.value,
+                )
+                .first()
+            )
+            if not user_model:
+                raise ValueError(f"User with ID {user_id} not found")
+            user_model.delete_flag = BooleanType.TRUE.value
+            user_model.updated_by = updated_by
+            self.db_session.commit()
+        except Exception as e:
+            self.db_session.rollback()
+            raise e
+
     def _model_to_entity(self, user_model: UserModel) -> User:
         """データベースモデルからドメインエンティティへの変換
 
